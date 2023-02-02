@@ -20,6 +20,7 @@ def pull_data(generator: Generator[NDArray | float, None, None],
               n_points: int = 10000) -> NDArray:
     return np.fromiter(generator, dtype=float, count=n_points)
 
+
 def chop_time_series_into_windows(data: NDArray,
                                   window_len: int = 40,
                                   target_len: int = 1) -> Tuple[NDArray, NDArray]:
@@ -37,8 +38,7 @@ def chop_time_series_into_windows(data: NDArray,
 
 class TimeSeriesDataset(torch.utils.data.Dataset):
     def __init__(self, windows: NDArray, targets: NDArray) -> None:
-        assert len(windows) > 0 and len(targets) > 0
-        assert len(windows) == len(targets)
+        assert len(windows) == len(targets) != 0
 
         super().__init__()
 
@@ -46,7 +46,7 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
         self.targets = torch.from_numpy(targets)
         self.n_points: int = len(windows)
 
-    def __get_item__(self, index: int) -> Tuple[NDArray, NDArray]:
+    def __getitem__(self, index: int) -> Tuple[NDArray, NDArray]:
         return (windows[index], targets[index])
 
     def __len__(self) -> int:
@@ -55,6 +55,7 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
     def datapoint_torch_size(self):
         return self.windows[0][0]
 
+
 if __name__ == "__main__":
     osc = harmonic_oscillator()
     t: NDArray = pull_data(osc, n_points=5)
@@ -62,3 +63,6 @@ if __name__ == "__main__":
     print(t)
     print(windows)
     print(targets)
+
+    d = TimeSeriesDataset(windows, targets)
+    print(d)
