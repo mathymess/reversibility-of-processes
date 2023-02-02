@@ -18,7 +18,7 @@ def harmonic_oscillator(amplitude: float = 1.,
 
 def pull_data(generator: Generator[NDArray | float, None, None],
               n_points: int = 10000) -> NDArray:
-    return np.fromiter(generator, dtype=float, count=n_points)
+    return np.fromiter(generator, dtype=np.float64, count=n_points)
 
 
 def chop_time_series_into_windows(data: NDArray,
@@ -42,12 +42,12 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
 
         super().__init__()
 
-        self.windows = torch.from_numpy(windows)
-        self.targets = torch.from_numpy(targets)
+        self.windows = torch.from_numpy(windows).to(torch.float32)
+        self.targets = torch.from_numpy(targets).to(torch.float32)
         self.n_points: int = len(windows)
 
     def __getitem__(self, index: int) -> Tuple[NDArray, NDArray]:
-        return (windows[index], targets[index])
+        return (self.windows[index], self.targets[index])
 
     def __len__(self) -> int:
         return self.n_points
