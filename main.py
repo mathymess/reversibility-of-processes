@@ -24,6 +24,7 @@ dataloader = torch.utils.data.DataLoader(d, batch_size=20, shuffle=True)
 # optim = torch.optim.SGD(model.parameters(), lr=0.1)
 optim = torch.optim.Adam(model.parameters())
 
+
 def test(model: MyModel, dataloader: torch.utils.data.DataLoader) -> float:
     losses = np.zeros(len(dataloader))
     with torch.no_grad():
@@ -33,7 +34,9 @@ def test(model: MyModel, dataloader: torch.utils.data.DataLoader) -> float:
             losses[i] = loss.item()
     return losses.mean()
 
+
 print("!!!", test(model, dataloader))
+
 for epoch in range(num_epochs):
     for i, (windows, targets) in enumerate(dataloader):
         optim.zero_grad()
