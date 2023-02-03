@@ -5,6 +5,8 @@ class MyModel(nn.Module):
     def __init__(self, window_len: int, datapoint_size: int):
         super().__init__()
 
+        self.datapoint_size: int = datapoint_size
+
         self.hidden_layer_size1: int = 100
         self.hidden_layer_size2: int = 100
 
@@ -20,7 +22,13 @@ class MyModel(nn.Module):
                              out_features=datapoint_size)
 
     def forward(self, window):
-        ret = window
+        # print(window, window.shape)
+        if window.shape[-1] == self.datapoint_size:
+            ret = window.flatten(window.ndim - 2)
+            # print(window, window.shape)
+        else:
+            ret = window
+
         ret = self.relu1(self.fc1(ret))
         ret = self.relu2(self.fc2(ret))
         ret = self.fc3(ret)

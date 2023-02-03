@@ -1,54 +1,77 @@
 import datagen
 from model import MyModel
 
+import numpy as np
+
 import torch
 import torch.nn as nn
 
-import numpy as np
+from typing import Callable
 
-window_len = 20
+window_len = 7
+lrz_ts = datagen.generate_time_series_for_system(datagen.lorenz_attractor_ode,
+                                                 initial_conditions=np.array([0., 1., 1.05]),
+                                                 delta_t=1e-2,
+                                                 n_points=10000)
 
-# time_series = datagen.pull_data(datagen.harmonic_oscillator(), n_points=1000)
-time_series = np.array(range(1000)) / 1000 * np.pi + 0.2 * np.random.rand(1000)
+data = datagen.TimeSeriesDataset(
+        *datagen.chop_time_series_into_windows(lrz_ts, window_len=window_len))
 
-d = datagen.TimeSeriesDataset(*datagen.chop_time_series_into_windows(time_series,
-                                                                     window_len=window_len))
-
-num_epochs = 1000
-loss_fn = nn.MSELoss()
-
-# model = MyModel(window_len=window_len, datapoint_size=1)
-model = nn.Sequential(nn.Linear(window_len, 100), nn.ReLU(), nn.Linear(100, 1))
-
-dataloader = torch.utils.data.DataLoader(d, batch_size=20, shuffle=True)
-# optim = torch.optim.SGD(model.parameters(), lr=0.1)
-optim = torch.optim.Adam(model.parameters())
+d_train, d_test = torch.utils.data.random_split(data, [0.5, 0.5])
 
 
-def test(model: MyModel, dataloader: torch.utils.data.DataLoader) -> float:
+reversed_data = datagen.TimeSeriesDataset(
+        *datagen.chop_time_series_into_windows(np.flip(lrz_ts.copy()), window_len=window_len))
+
+rev_train, rev_test = torch.utils.data.random_split(reversed_data, [0.5, 0.5])
+
+d_train_dl = torch.utils.data.DataLoader(d_train, batch_size=20, shuffle=True)
+d_test_dl = torch.utils.data.DataLoader(d_test, batch_size=20, shuffle=True)
+rev_train_dl = torch.utils.data.DataLoader(rev_train, batch_size=20, shuffle=True)
+rev_test_dl = torch.utils.data.DataLoader(rev_test, batch_size=20, shuffle=True)
+
+model = MyModel(window_len=window_len, datapoint_size=3)
+
+def test(model: MyModel,
+         dataloader: torch.utils.data.DataLoader,
+         loss_fn: Callable[..., float] = nn.MSELoss()) -> float:
     losses = np.zeros(len(dataloader))
     with torch.no_grad():
         for i, (windows, targets) in enumerate(dataloader):
             pred = model(windows)
-            loss = loss_fn(pred, targets.squeeze(0).to(torch.float32))
+            loss = loss_fn(pred, targets.squeeze(1))
             losses[i] = loss.item()
     return losses.mean()
 
 
-print("!!!", test(model, dataloader))
+def train(model: MyModel, dataloader, num_epochs = 20) -> None:
+    loss_fn = nn.MSELoss()
 
-for epoch in range(num_epochs):
-    for i, (windows, targets) in enumerate(dataloader):
-        optim.zero_grad()
+    # optim = torch.optim.SGD(model.parameters(), lr=0.1)
+    optim = torch.optim.Adam(model.parameters())
 
-        pred = model(windows)
+    print("!!!", test(model, dataloader, loss_fn))
 
-        loss = loss_fn(pred, targets.squeeze(0).to(torch.float32))
-        loss.backward()
+    for epoch in range(num_epochs):
+        for i, (windows, targets) in enumerate(dataloader):
+            optim.zero_grad()
 
-        optim.step()
+            pred = model(windows)
 
-        if i % 100 == 0:
-            print(f"iteration {i} epoch {epoch} loss {loss}")
+            loss = loss_fn(pred, targets.squeeze(1))
+            loss.backward()
 
-print("!!!", test(model, dataloader))
+            optim.step()
+
+        print(f"epoch {epoch} loss {loss}")
+
+    print("!!!", test(model, dataloader, loss_fn))
+
+
+train(model, d_train_dl)
+print("Trained withhout reverse, loss on the test dataset:",
+      test(model, d_test_dl))
+
+train(model, rev_train_dl)
+print("Trained with reverse, loss on the test dataset:",
+      test(model, rev_test_dl))
