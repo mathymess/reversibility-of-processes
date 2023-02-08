@@ -39,12 +39,11 @@ def test(model: MyModel,
     with torch.no_grad():
         for i, (windows, targets) in enumerate(dataloader):
             pred = model(windows)
-            loss = loss_fn(pred, targets.squeeze(1))
-            losses[i] = loss.item()
+            losses[i] = loss_fn(pred, targets.squeeze(1))
     return losses.mean()
 
 
-def train(model: MyModel, dataloader, num_epochs = 20) -> None:
+def train(model: MyModel, dataloader, num_epochs: int = 20) -> None:
     loss_fn = nn.MSELoss()
 
     # optim = torch.optim.SGD(model.parameters(), lr=0.1)
@@ -72,6 +71,7 @@ train(model, d_train_dl)
 print("Trained withhout reverse, loss on the test dataset:",
       test(model, d_test_dl))
 
+model = MyModel(window_len=window_len, datapoint_size=3)
 train(model, rev_train_dl)
 print("Trained with reverse, loss on the test dataset:",
       test(model, rev_test_dl))
