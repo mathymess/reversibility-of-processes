@@ -2,9 +2,11 @@ import datagen
 from model import MyModel
 
 import numpy as np
+import time
 
 import torch
 import torch.nn as nn
+from torch.utils.tensorboard import SummaryWriter
 
 from typing import Callable
 
@@ -30,8 +32,6 @@ d_test_dl = torch.utils.data.DataLoader(d_test, batch_size=20, shuffle=True)
 rev_train_dl = torch.utils.data.DataLoader(rev_train, batch_size=20, shuffle=True)
 rev_test_dl = torch.utils.data.DataLoader(rev_test, batch_size=20, shuffle=True)
 
-model = MyModel(window_len=window_len, datapoint_size=3)
-
 def test(model: MyModel,
          dataloader: torch.utils.data.DataLoader,
          loss_fn: Callable[..., float] = nn.MSELoss()) -> float:
@@ -43,13 +43,16 @@ def test(model: MyModel,
     return losses.mean()
 
 
-def train(model: MyModel, dataloader, num_epochs: int = 20) -> None:
+def train(model: MyModel, dataloader,
+          num_epochs: int = 20,
+          tensorboard_dir_suffix: str = "") -> None:
+    tensorboard_dir = "runs/" + time.strftime("%Y%m%d_%H%M%S") + "." + tensorboard_dir_suffix
+    writer = SummaryWriter(log_dir=tensorboard_dir)
+
     loss_fn = nn.MSELoss()
 
     # optim = torch.optim.SGD(model.parameters(), lr=0.1)
     optim = torch.optim.Adam(model.parameters())
-
-    print("!!!", test(model, dataloader, loss_fn))
 
     for epoch in range(num_epochs):
         for i, (windows, targets) in enumerate(dataloader):
@@ -62,16 +65,17 @@ def train(model: MyModel, dataloader, num_epochs: int = 20) -> None:
 
             optim.step()
 
-        print(f"epoch {epoch} loss {loss}")
+        writer.add_scalar("train-loss", loss.mean(), epoch)
 
-    print("!!!", test(model, dataloader, loss_fn))
+    writer.close()
 
 
-train(model, d_train_dl)
-print("Trained withhout reverse, loss on the test dataset:",
+model = MyModel(window_len=window_len, datapoint_size=3)
+train(model, d_train_dl, tensorboard_dir_suffix="direct")
+print("Trained without reverse, loss on the test dataset:",
       test(model, d_test_dl))
 
 model = MyModel(window_len=window_len, datapoint_size=3)
-train(model, rev_train_dl)
+train(model, rev_train_dl, tensorboard_dir_suffix="reverse")
 print("Trained with reverse, loss on the test dataset:",
       test(model, rev_test_dl))
