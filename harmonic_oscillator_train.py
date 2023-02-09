@@ -1,5 +1,5 @@
 import datagen
-from model import MyModel
+from models import MyModel
 
 import torch
 import torch.nn as nn

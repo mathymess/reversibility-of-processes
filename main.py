@@ -1,5 +1,5 @@
 import datagen
-from model import MyModel
+from models import MyModel
 
 import numpy as np
 import time
