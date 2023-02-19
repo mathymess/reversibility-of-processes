@@ -17,13 +17,13 @@ lrz_ts = datagen.generate_time_series_for_system(datagen.lorenz_attractor_ode,
                                                  n_points=10000)
 
 data = datagen.TimeSeriesDataset(
-        *datagen.chop_time_series_into_windows(lrz_ts, window_len=window_len))
+    *datagen.chop_time_series_into_windows(lrz_ts, window_len=window_len))
 
 d_train, d_test = torch.utils.data.random_split(data, [0.5, 0.5])
 
 
 reversed_data = datagen.TimeSeriesDataset(
-        *datagen.chop_time_series_into_windows(np.flip(lrz_ts.copy()), window_len=window_len))
+    *datagen.chop_time_series_into_windows(np.flip(lrz_ts.copy()), window_len=window_len))
 
 rev_train, rev_test = torch.utils.data.random_split(reversed_data, [0.5, 0.5])
 
@@ -31,6 +31,7 @@ d_train_dl = torch.utils.data.DataLoader(d_train, batch_size=20, shuffle=True)
 d_test_dl = torch.utils.data.DataLoader(d_test, batch_size=20, shuffle=True)
 rev_train_dl = torch.utils.data.DataLoader(rev_train, batch_size=20, shuffle=True)
 rev_test_dl = torch.utils.data.DataLoader(rev_test, batch_size=20, shuffle=True)
+
 
 def test(model: MyModel,
          dataloader: torch.utils.data.DataLoader,
