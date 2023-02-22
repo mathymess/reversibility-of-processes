@@ -1,33 +1,38 @@
-import datagen
-
 import numpy as np
-from matplotlib import pyplot as plt
-
 import torch
 
-from typing import Tuple
 import numpy.typing
 NDArray = numpy.typing.NDArray[np.floating]
 
 
-def chop_time_series_into_windows(data: NDArray,
-                                  window_len: int = 40,
-                                  target_len: int = 1,
-                                  skip_till_each_nth=None) -> Tuple[NDArray, NDArray]:
-    assert data.ndim <= 2, "Time series expected, each datapoint is either a number or a 1D array"
-    if skip_till_each_nth is None:
-        skip_till_each_nth = int(window_len / 2)
+def chop_time_series_into_chunks(time_series: NDArray,
+                                 window_len: int = 40,
+                                 take_each_nth_window: int = 1) -> NDArray:
+    assert time_series.ndim == 2, "Time series expected, each datapoint is a 1D array"
+    assert len(time_series) >= window_len, f"window_len={window_len} is too large"
 
-    windows = np.array([data[i:i+window_len]
-                        for i in range(len(data) - window_len - target_len + 1)])
+    windows = np.array([time_series[i:i+window_len]
+                        for i in range(0, len(time_series) - window_len + 1, take_each_nth_window)])
 
-    targets = np.array([data[i:i+target_len]
-                        for i in range(window_len, len(data) - target_len + 1)])
+    return windows
 
-    windows = windows[::skip_till_each_nth]
-    targets = targets[::skip_till_each_nth]
 
-    assert len(windows) == len(targets)
+def split_chunks_into_windows_and_targets(chunks: NDArray,
+                                          target_len: int = 1,
+                                          reverse: bool = False) -> tuple[NDArray, NDArray]:
+    assert chunks.ndim == 3, "Should be (n_chunks, chunk_len, datapoint_dim)"
+
+    chunk_len: int = chunks.shape[1]
+    assert 0 < target_len < chunk_len, f"target_len={target_len} is too large or non-positive"
+
+    if reverse:
+        chunks = np.flip(chunks, 1)
+
+    window_len: int = chunk_len - target_len
+
+    windows: NDArray = chunks[:, :window_len, :]
+    targets: NDArray = chunks[:, window_len:, :]
+
     return windows, targets
 
 
@@ -41,7 +46,7 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
         self.targets = torch.from_numpy(targets).to(torch.float32)
         self.n_points: int = len(windows)
 
-    def __getitem__(self, index: int) -> Tuple[NDArray, NDArray]:
+    def __getitem__(self, index: int) -> tuple:
         return (self.windows[index], self.targets[index])
 
     def __len__(self) -> int:
@@ -51,12 +56,96 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
         return self.windows[0][0]
 
 
-if __name__ == "__main__":
-    t: NDArray = pull_data_from_generator(harmonic_oscillator(), n_points=5)
-    windows, targets = chop_time_series_into_windows(t, window_len=3, target_len=1)
-    # print(t)
-    # print(windows)
-    # print(targets)
+def test_chop_time_series_into_chunks() -> None:
+    def compare(actual: NDArray, expected: NDArray) -> None:
+        assert np.array_equal(actual, expected), f"{actual} \n\t!=\n{expected}"
 
-    d = TimeSeriesDataset(windows, targets)
-    # print(d)
+    simple_data = np.array([[1], [2], [3], [4]])
+    data = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12], [13, 14, 15]])
+
+    compare(
+        chop_time_series_into_chunks(simple_data, window_len=1, take_each_nth_window=1),
+        np.array([[[1]], [[2]], [[3]], [[4]]])
+    )
+
+    compare(
+        chop_time_series_into_chunks(simple_data, window_len=1, take_each_nth_window=3),
+        np.array([[[1]], [[4]]])
+    )
+
+    compare(
+        chop_time_series_into_chunks(simple_data, window_len=2, take_each_nth_window=1),
+        np.array([[[1], [2]], [[2], [3]], [[3], [4]]])
+    )
+
+    compare(
+        chop_time_series_into_chunks(simple_data, window_len=3, take_each_nth_window=1),
+        np.array([[[1], [2], [3]], [[2], [3], [4]]])
+    )
+
+    compare(
+        chop_time_series_into_chunks(data, window_len=1, take_each_nth_window=1),
+        np.array([[[1, 2, 3]], [[4, 5, 6]], [[7, 8, 9]], [[10, 11, 12]], [[13, 14, 15]]])
+    )
+
+    compare(
+        chop_time_series_into_chunks(data, window_len=2, take_each_nth_window=2),
+        np.array([[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]])
+    )
+
+    compare(
+        chop_time_series_into_chunks(data, window_len=2, take_each_nth_window=3),
+        np.array([[[1, 2, 3], [4, 5, 6]], [[10, 11, 12], [13, 14, 15]]])
+    )
+
+
+def test_split_chunks_into_windows_and_targets() -> None:
+    def compare(actual: tuple[NDArray, NDArray],
+                expected: tuple[NDArray, NDArray]) -> None:
+        assert np.array_equal(actual[0], expected[0]), f"{actual} \n\t!=\n{expected}"
+        assert np.array_equal(actual[1], expected[1]), f"{actual} \n\t!=\n{expected}"
+
+    simple_data = np.array([[[1], [2], [3], [4]],
+                            [[5], [6], [7], [8]],
+                            [[9], [10], [11], [12]]])
+
+    compare(
+        split_chunks_into_windows_and_targets(simple_data, target_len=1),
+        (
+            np.array([[[1], [2], [3]],
+                      [[5], [6], [7]],
+                      [[9], [10], [11]]]),
+            np.array([[[4]],
+                      [[8]],
+                      [[12]]])
+        )
+    )
+
+    compare(
+        split_chunks_into_windows_and_targets(simple_data, target_len=2),
+        (
+            np.array([[[1], [2]],
+                      [[5], [6]],
+                      [[9], [10]]]),
+            np.array([[[3], [4]],
+                      [[7], [8]],
+                      [[11], [12]]])
+        )
+    )
+
+    compare(
+        split_chunks_into_windows_and_targets(simple_data, target_len=2, reverse=True),
+        (
+            np.array([[[4], [3]],
+                      [[8], [7]],
+                      [[12], [11]]]),
+            np.array([[[2], [1]],
+                      [[6], [5]],
+                      [[10], [9]]])
+        )
+    )
+
+
+if __name__ == "__main__":
+    test_chop_time_series_into_chunks()
+    test_split_chunks_into_windows_and_targets()
