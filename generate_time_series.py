@@ -92,12 +92,26 @@ def generate_time_series_for_system(system: Callable[[NDArray, float], NDArray],
 
 
 def load_two_body_problem_time_series() -> NDArray:
-    twb = generate_time_series_for_system(two_body_problem_ode,
+    def two_body_problem_ode_with_coefs(x: NDArray, _t: float) -> NDArray:
+        return two_body_problem_ode(x, _t, coef=-1)
+
+    twb = generate_time_series_for_system(two_body_problem_ode_with_coefs,
                                           initial_conditions=np.array([-1, 2, 0.2, 0.1]),
                                           t_density=400,
                                           t_duration=8,
                                           second_order_ode_drop_half=True)
     return twb
+
+
+def load_lorenz_attractor_time_series() -> NDArray:
+    def lorenz_attractor_ode_with_coefs(x: NDArray, _t: float) -> NDArray:
+        return lorenz_attractor_ode(x, _t, coefs=(10, 28, 2.667))
+
+    lrz = generate_time_series_for_system(lorenz_attractor_ode_with_coefs,
+                                          initial_conditions=np.array([-10., -10, 28]),
+                                          t_density=100,
+                                          t_duration=100)
+    return lrz
 
 
 def plot_3d_data(data: NDArray,
@@ -165,6 +179,20 @@ def plot_data_componentwise(data: NDArray,
         plt.show()
 
 
-if __name__ == "__main__":
+def explore_two_body_time_series() -> None:
     twb = load_two_body_problem_time_series()
+    print(twb.shape)
     plot_2d_data(twb, title="2-body problem", show=True)
+    plot_data_componentwise(twb, title="2-body problem", show=True)
+
+
+def explore_lorenz_attractor_time_series() -> None:
+    lrz = load_lorenz_attractor_time_series()
+    print(lrz.shape)
+    plot_3d_data(lrz, title="Lorenz attractor time series", show=True)
+    plot_data_componentwise(lrz, title="Lorenz attractor time series, componentwise", show=True)
+
+
+if __name__ == "__main__":
+    # explore_two_body_time_series()
+    explore_lorenz_attractor_time_series()
