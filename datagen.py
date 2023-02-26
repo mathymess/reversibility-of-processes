@@ -1,6 +1,7 @@
 import math
 import numpy as np
 from scipy.integrate import odeint
+import matplotlib.pyplot as plt
 
 from typing import Callable, Generator
 import numpy.typing
@@ -76,10 +77,10 @@ def generate_time_series_for_system(system: Callable[[NDArray, float], NDArray],
                                     initial_conditions: NDArray,
                                     t_shift: float = 0,
                                     t_density: float = 100,
-                                    t_duration: int = 10000,
+                                    t_duration: float = 10000,
                                     second_order_ode_drop_half: bool = False,
                                     **kwargs) -> NDArray:
-    t_linspace = np.linspace(0, t_duration, t_density * t_duration) + t_shift
+    t_linspace = np.linspace(0, t_duration, int(t_density * t_duration)) + t_shift
     sol = odeint(system, initial_conditions, t_linspace, **kwargs)
 
     if second_order_ode_drop_half:
@@ -92,12 +93,78 @@ def generate_time_series_for_system(system: Callable[[NDArray, float], NDArray],
 
 def load_two_body_problem_time_series() -> NDArray:
     twb = generate_time_series_for_system(two_body_problem_ode,
-                                          initial_conditions=np.array([1, 3, -0.1, 0.1]),
+                                          initial_conditions=np.array([-1, 2, 0.2, 0.1]),
                                           t_density=400,
-                                          t_duration=13,
+                                          t_duration=8,
                                           second_order_ode_drop_half=True)
     return twb
 
 
+def plot_3d_data(data: NDArray,
+                 title: str = "",
+                 close_before_plotting: bool = True,
+                 show: bool = False) -> None:
+    assert data.ndim == 2 and data.shape[1] == 3, "Expecting 3-dimensional data"
+
+    if close_before_plotting:
+        plt.close()
+
+    ax = plt.figure().add_subplot(projection="3d")
+    ax.plot(*data.T, lw=0.5)
+    ax.scatter(*data.T, lw=0.5)
+
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_zlabel('z')
+    plt.title(title)
+
+    if show:
+        plt.show()
+
+
+def plot_2d_data(data: NDArray,
+                 title: str = "",
+                 close_before_plotting: bool = True,
+                 show: bool = False) -> None:
+    assert data.ndim == 2 and data.shape[1] == 2, "Expecting 2-dimensional data"
+
+    if close_before_plotting:
+        plt.close()
+
+    plt.plot(*data.T, lw=0.5)
+    plt.scatter(*data.T, lw=0.5)
+    plt.xlabel('x')
+    plt.ylabel('y')
+    plt.grid('y')
+    plt.title(title)
+
+    if show:
+        plt.show()
+
+
+def plot_data_componentwise(data: NDArray,
+                            title: str = "Plotting multidimensional data componentwise",
+                            close_before_plotting: bool = True,
+                            show: bool = True) -> None:
+    assert data.ndim == 2, "Expecting multidimensional data"
+
+    if close_before_plotting:
+        plt.close()
+
+    n_components = data.shape[1]
+    fig, ax = plt.subplots(n_components)
+    ax[0].set_title(title)
+
+    for i in range(n_components):
+        ax[i].plot(data[:, i])
+        ax[i].scatter(range(len(data)), data[:, i])
+        ax[i].set_ylabel("xyzp"[i])
+        ax[i].grid()
+
+    if show:
+        plt.show()
+
+
 if __name__ == "__main__":
     twb = load_two_body_problem_time_series()
+    plot_2d_data(twb, title="2-body problem", show=True)
