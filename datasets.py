@@ -102,6 +102,7 @@ def test_chop_time_series_into_chunks() -> None:
 def test_split_chunks_into_windows_and_targets() -> None:
     def compare(actual: tuple[NDArray, NDArray],
                 expected: tuple[NDArray, NDArray]) -> None:
+        assert len(actual) == len(expected) == 2
         assert np.array_equal(actual[0], expected[0]), f"{actual} \n\t!=\n{expected}"
         assert np.array_equal(actual[1], expected[1]), f"{actual} \n\t!=\n{expected}"
 

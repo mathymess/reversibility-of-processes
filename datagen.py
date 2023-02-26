@@ -2,7 +2,7 @@ import math
 import numpy as np
 from scipy.integrate import odeint
 
-from typing import Callable, Generator, Tuple
+from typing import Callable, Generator
 import numpy.typing
 NDArray = numpy.typing.NDArray[np.floating]
 
@@ -31,7 +31,7 @@ def harmonic_oscillator_ode(x: NDArray, _t: float) -> NDArray:
 
 
 def belousov_zhabotinsky_ode(x: NDArray, _t: float,
-                             coefs: Tuple[float] = (10., -3., 4., -0.879, -10.)) -> NDArray:
+                             coefs: tuple[float, ...] = (10., -3., 4., -0.879, -10.)) -> NDArray:
     assert x.shape == (3,)
     A, B, C, D, E = coefs
     x_dot = np.zeros(3)
@@ -42,9 +42,11 @@ def belousov_zhabotinsky_ode(x: NDArray, _t: float,
 
 
 def two_body_problem_ode(x: NDArray, _t: float) -> NDArray:
-    # Simplified 2D ODE: $\ddot{\vec{r}} = \frac{C \vec{r}}{|\vec{r}|^3}
-    # $\vec{r}$ = (x[0], x[1])
-    # $\dot{\vec{r}}$ = (x[0], x[1])
+    r"""
+    Simplified 2D ODE: $\ddot{\vec{r}} = \frac{C \vec{r}}{|\vec{r}|^3}
+    $\vec{r}$ = (x[0], x[1])
+    $\dot{\vec{r}}$ = (x[0], x[1])
+    """
     assert x.shape == (4,)
     C = -1
     dist = np.linalg.norm(x[:2])
@@ -57,7 +59,7 @@ def two_body_problem_ode(x: NDArray, _t: float) -> NDArray:
 
 
 def lorenz_attractor_ode(x: NDArray, _t: float,
-                         coefs: Tuple[float] = (10, 28, 2.667)) -> NDArray:
+                         coefs: tuple[float, ...] = (10, 28, 2.667)) -> NDArray:
     # From https://matplotlib.org/stable/gallery/mplot3d/lorenz_attractor.html
     assert x.shape == (3,)
     A, B, C = coefs
@@ -94,16 +96,16 @@ if __name__ == "__main__":
                                           n_points=10000,
                                           second_order_ode_drop_half=True)
 
-    plt.plot(hos)  # a sinusoid
+    # plt.plot(hos)  # a sinusoid
 
     bzh = generate_time_series_for_system(belousov_zhabotinsky_ode,
                                           initial_conditions=np.array([100, 10, -1]),
                                           delta_t=1e-7,
                                           n_points=10000)
 
-    ax = plt.figure().add_subplot(projection='3d')
-    ax.plot(*bzh.T, lw=0.5)
-    plt.show()
+    # ax = plt.figure().add_subplot(projection='3d')
+    # ax.plot(*bzh.T, lw=0.5)
+    # plt.show()
 
     twb = generate_time_series_for_system(two_body_problem_ode,
                                           initial_conditions=np.array([1, 3, -0.1, 0.1]),
@@ -111,10 +113,9 @@ if __name__ == "__main__":
                                           n_points=10000,
                                           second_order_ode_drop_half=True)
 
-    plt.scatter(*twb)  # an ellipse
+    # plt.scatter(*twb)  # an ellipse
 
     lrz = generate_time_series_for_system(lorenz_attractor_ode,
                                           initial_conditions=np.array([0., 1., 1.05]),
                                           delta_t=1e-2,
                                           n_points=10000)
-

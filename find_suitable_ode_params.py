@@ -3,13 +3,12 @@ import datagen
 import numpy as np
 from matplotlib import pyplot as plt
 
-from typing import Callable, Generator, Any
 import numpy.typing
 NDArray = numpy.typing.NDArray[np.floating]
 
 
 def plot_3d_data(data: NDArray) -> None:
-    assert data.shape[1] == 3
+    assert len(data) == 2 and data.shape[1] == 3, "Expecting 3-dimensional data"
 
     plt.close()
     ax = plt.figure().add_subplot(projection='3d')
@@ -21,17 +20,21 @@ def plot_3d_data(data: NDArray) -> None:
     ax.set_zlabel('z')
 
 
-def plot_3d_data_componentwise(data: NDArray) -> None:
+def plot_data_componentwise(data: NDArray,
+                            title: str = "Plotting multidimensional data componentwise") -> None:
+    assert data.ndim == 2, "Expecting multidimensional data"
+
     plt.close()
     n_components = data.shape[1]
     fig, ax = plt.subplots(n_components)
-    ax[0].set_title("Plotting multidimensional dataset componentwise")
+    ax[0].set_title(title)
 
     for i in range(n_components):
         ax[i].plot(data[:, i])
         ax[i].scatter(range(len(data)), data[:, i])
         ax[i].set_ylabel('xyzp'[i])
         ax[i].grid()
+
 
 def belousov_zhabotinsky_with_coefs(x: NDArray, _t: float) -> NDArray:
     coefs = (10., -3., 4., -0.879, -10.)
@@ -48,11 +51,14 @@ def belousov_zhabotinsky_simplified(x: NDArray, _t: float) -> NDArray:
     x_dot[2] = x[0] - x[2]
     return x_dot
 
+
 d = datagen.generate_time_series_for_system(
         belousov_zhabotinsky_simplified,
         initial_conditions=np.array([0.5, 0.5, 0.5]),
         delta_t=5e-3)
 
-print(d)
-plot_3d_data_componentwise(d)
+
+if __name__ == "__main__":
+    print(d)
+    plot_data_componentwise(d)
 # plt.show()
