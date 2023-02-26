@@ -32,13 +32,13 @@ def harmonic_oscillator_ode(x: NDArray, _t: float) -> NDArray:
 
 
 def belousov_zhabotinsky_ode(x: NDArray, _t: float,
-                             coefs: tuple[float, ...] = (10., -3., 4., -0.879, -10.)) -> NDArray:
+                             coefs: tuple[float, ...] = (5e-3, 0.6, 1 / 2e-2, 1 / 4e-4)) -> NDArray:
     assert x.shape == (3,)
-    A, B, C, D, E = coefs
+    A, B, C, D = coefs
     x_dot = np.zeros(3)
-    x_dot[0] = A * x[0] * (C - x[1]) - B * x[0] * x[2]
-    x_dot[1] = A * x[0] * (C - x[1]) - D * x[1]
-    x_dot[2] = D * x[1] - E * x[2]
+    x_dot[0] = C * (x[1] * (A - x[0]) + x[0] * (1 - x[0]))
+    x_dot[1] = D * (- x[1] * (A + x[0]) + B * x[2])
+    x_dot[2] = x[0] - x[2]
     return x_dot
 
 
@@ -112,6 +112,21 @@ def load_lorenz_attractor_time_series() -> NDArray:
                                           t_density=100,
                                           t_duration=100)
     return lrz
+
+
+def load_belousov_zhabotinsky_time_series() -> NDArray:
+    def belousov_zhabotinsky_ode_with_coefs(x: NDArray, _t: float) -> NDArray:
+        # coefs = (8e-4, 0.666, 1 / 4e-2, 1 / 4e-4)
+        coefs = (5e-3, 0.6, 1 / 2e-2, 1 / 4e-4)
+        return belousov_zhabotinsky_ode(x, _t, coefs)
+
+    bzh = generate_time_series_for_system(
+        belousov_zhabotinsky_ode_with_coefs,
+        initial_conditions=np.array([0., 0.5, 0.3]),
+        t_density=300,
+        t_duration=100)
+
+    return bzh
 
 
 def plot_3d_data(data: NDArray,
@@ -193,6 +208,15 @@ def explore_lorenz_attractor_time_series() -> None:
     plot_data_componentwise(lrz, title="Lorenz attractor time series, componentwise", show=True)
 
 
+def explore_belousov_zhabotinsky_time_series() -> None:
+    bzh = load_belousov_zhabotinsky_time_series()
+    print(bzh.shape)
+    # plot_3d_data(bzh, title="Belousov-Zhabotinsky time series", show=True)
+    plot_data_componentwise(
+        bzh, title="Belousov-Zhabotinsky time series, componentwise", show=True)
+
+
 if __name__ == "__main__":
     # explore_two_body_time_series()
-    explore_lorenz_attractor_time_series()
+    # explore_lorenz_attractor_time_series()
+    explore_belousov_zhabotinsky_time_series()
