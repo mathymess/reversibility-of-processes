@@ -9,9 +9,13 @@ NDArray = numpy.typing.NDArray[np.floating]
 
 def chop_time_series_into_chunks(time_series: NDArray,
                                  chunk_len: int,
-                                 take_each_nth_chunk: int) -> NDArray:
+                                 take_each_nth_chunk: int,
+                                 reverse: bool = False) -> NDArray:
     assert time_series.ndim == 2, "Time series expected, each datapoint is a 1D array"
     assert len(time_series) >= chunk_len, f"chunk_len={chunk_len} is too large"
+
+    if reverse:
+        time_series = np.flip(time_series, 0)
 
     chunks = np.array([time_series[i:i+chunk_len]
                       for i in range(0, len(time_series) - chunk_len + 1, take_each_nth_chunk)])
@@ -20,15 +24,11 @@ def chop_time_series_into_chunks(time_series: NDArray,
 
 
 def split_chunks_into_windows_and_targets(chunks: NDArray,
-                                          target_len: int = 1,
-                                          reverse: bool = False) -> tuple[NDArray, NDArray]:
+                                          target_len: int = 1) -> tuple[NDArray, NDArray]:
     assert chunks.ndim == 3, "Shape should be (n_chunks, chunk_len, datapoint_dim)"
 
     chunk_len: int = chunks.shape[1]
     assert 0 < target_len < chunk_len, f"target_len={target_len} is too large or non-positive"
-
-    if reverse:
-        chunks = np.flip(chunks, 1)
 
     window_len: int = chunk_len - target_len
 
@@ -62,9 +62,11 @@ def time_series_to_dataset(ts: NDArray,
                            chunk_len: int,
                            take_each_nth_chunk: int,
                            reverse: bool = False) -> TimeSeriesDataset:
-    chunks = chop_time_series_into_chunks(ts, chunk_len=chunk_len,
-                                          take_each_nth_chunk=take_each_nth_chunk)
-    windows, targets = split_chunks_into_windows_and_targets(chunks, reverse=reverse)
+    chunks = chop_time_series_into_chunks(time_series=ts,
+                                          chunk_len=chunk_len,
+                                          take_each_nth_chunk=take_each_nth_chunk,
+                                          reverse=reverse)
+    windows, targets = split_chunks_into_windows_and_targets(chunks)
     return TimeSeriesDataset(windows, targets)
 
 
@@ -130,6 +132,12 @@ def test_chop_time_series_into_chunks() -> None:
     )
 
     compare(
+        chop_time_series_into_chunks(simple_data, chunk_len=2,
+                                     take_each_nth_chunk=1, reverse=True),
+        np.array([[[4], [3]], [[3], [2]], [[2], [1]]])
+    )
+
+    compare(
         chop_time_series_into_chunks(simple_data, chunk_len=2, take_each_nth_chunk=1),
         np.array([[[1], [2]], [[2], [3]], [[3], [4]]])
     )
@@ -187,18 +195,6 @@ def test_split_chunks_into_windows_and_targets() -> None:
             np.array([[[3], [4]],
                       [[7], [8]],
                       [[11], [12]]])
-        )
-    )
-
-    compare(
-        split_chunks_into_windows_and_targets(simple_data, target_len=2, reverse=True),
-        (
-            np.array([[[4], [3]],
-                      [[8], [7]],
-                      [[12], [11]]]),
-            np.array([[[2], [1]],
-                      [[6], [5]],
-                      [[10], [9]]])
         )
     )
 
