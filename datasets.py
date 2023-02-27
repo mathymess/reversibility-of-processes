@@ -8,15 +8,15 @@ NDArray = numpy.typing.NDArray[np.floating]
 
 
 def chop_time_series_into_chunks(time_series: NDArray,
-                                 window_len: int,
-                                 take_each_nth_window: int) -> NDArray:
+                                 chunk_len: int,
+                                 take_each_nth_chunk: int) -> NDArray:
     assert time_series.ndim == 2, "Time series expected, each datapoint is a 1D array"
-    assert len(time_series) >= window_len, f"window_len={window_len} is too large"
+    assert len(time_series) >= chunk_len, f"chunk_len={chunk_len} is too large"
 
-    windows = np.array([time_series[i:i+window_len]
-                        for i in range(0, len(time_series) - window_len + 1, take_each_nth_window)])
+    chunks = np.array([time_series[i:i+chunk_len]
+                      for i in range(0, len(time_series) - chunk_len + 1, take_each_nth_chunk)])
 
-    return windows
+    return chunks
 
 
 def split_chunks_into_windows_and_targets(chunks: NDArray,
@@ -59,11 +59,11 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
 
 
 def time_series_to_dataset(ts: NDArray,
-                           window_len: int,
-                           take_each_nth_window: int,
+                           chunk_len: int,
+                           take_each_nth_chunk: int,
                            reverse: bool = False) -> TimeSeriesDataset:
-    chunks = chop_time_series_into_chunks(ts, window_len=window_len,
-                                          take_each_nth_window=take_each_nth_window)
+    chunks = chop_time_series_into_chunks(ts, chunk_len=chunk_len,
+                                          take_each_nth_chunk=take_each_nth_chunk)
     windows, targets = split_chunks_into_windows_and_targets(chunks, reverse=reverse)
     return TimeSeriesDataset(windows, targets)
 
@@ -86,26 +86,26 @@ class AllDataHolder:
 
 def prepare_time_series_for_learning(train_ts: NDArray,
                                      test_ts: NDArray,
-                                     window_len: int = 40,
+                                     chunk_len: int = 40,
                                      loader_batch_size: int = 20) -> AllDataHolder:
-    assert window_len >= 2
+    assert chunk_len >= 2
     assert loader_batch_size >= 1
 
-    take_each_nth_window: int = window_len // 2
+    take_each_nth_chunk: int = chunk_len // 2
 
     # Forward
-    train_dataset = time_series_to_dataset(train_ts, window_len=window_len,
-                                           take_each_nth_window=take_each_nth_window)
-    test_dataset = time_series_to_dataset(test_ts, window_len=window_len,
-                                          take_each_nth_window=take_each_nth_window)
+    train_dataset = time_series_to_dataset(train_ts, chunk_len=chunk_len,
+                                           take_each_nth_chunk=take_each_nth_chunk)
+    test_dataset = time_series_to_dataset(test_ts, chunk_len=chunk_len,
+                                          take_each_nth_chunk=take_each_nth_chunk)
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=loader_batch_size)
     forward = DataHolderOneDirection(train_dataset, test_dataset, train_loader)
 
     # Backward
-    train_dataset = time_series_to_dataset(train_ts, window_len=window_len, reverse=True,
-                                           take_each_nth_window=take_each_nth_window)
-    test_dataset = time_series_to_dataset(test_ts, window_len=window_len, reverse=True,
-                                          take_each_nth_window=take_each_nth_window)
+    train_dataset = time_series_to_dataset(train_ts, chunk_len=chunk_len, reverse=True,
+                                           take_each_nth_chunk=take_each_nth_chunk)
+    test_dataset = time_series_to_dataset(test_ts, chunk_len=chunk_len, reverse=True,
+                                          take_each_nth_chunk=take_each_nth_chunk)
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=loader_batch_size)
     backward = DataHolderOneDirection(train_dataset, test_dataset, train_loader)
 
@@ -120,37 +120,37 @@ def test_chop_time_series_into_chunks() -> None:
     data = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12], [13, 14, 15]])
 
     compare(
-        chop_time_series_into_chunks(simple_data, window_len=1, take_each_nth_window=1),
+        chop_time_series_into_chunks(simple_data, chunk_len=1, take_each_nth_chunk=1),
         np.array([[[1]], [[2]], [[3]], [[4]]])
     )
 
     compare(
-        chop_time_series_into_chunks(simple_data, window_len=1, take_each_nth_window=3),
+        chop_time_series_into_chunks(simple_data, chunk_len=1, take_each_nth_chunk=3),
         np.array([[[1]], [[4]]])
     )
 
     compare(
-        chop_time_series_into_chunks(simple_data, window_len=2, take_each_nth_window=1),
+        chop_time_series_into_chunks(simple_data, chunk_len=2, take_each_nth_chunk=1),
         np.array([[[1], [2]], [[2], [3]], [[3], [4]]])
     )
 
     compare(
-        chop_time_series_into_chunks(simple_data, window_len=3, take_each_nth_window=1),
+        chop_time_series_into_chunks(simple_data, chunk_len=3, take_each_nth_chunk=1),
         np.array([[[1], [2], [3]], [[2], [3], [4]]])
     )
 
     compare(
-        chop_time_series_into_chunks(data, window_len=1, take_each_nth_window=1),
+        chop_time_series_into_chunks(data, chunk_len=1, take_each_nth_chunk=1),
         np.array([[[1, 2, 3]], [[4, 5, 6]], [[7, 8, 9]], [[10, 11, 12]], [[13, 14, 15]]])
     )
 
     compare(
-        chop_time_series_into_chunks(data, window_len=2, take_each_nth_window=2),
+        chop_time_series_into_chunks(data, chunk_len=2, take_each_nth_chunk=2),
         np.array([[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]])
     )
 
     compare(
-        chop_time_series_into_chunks(data, window_len=2, take_each_nth_window=3),
+        chop_time_series_into_chunks(data, chunk_len=2, take_each_nth_chunk=3),
         np.array([[[1, 2, 3], [4, 5, 6]], [[10, 11, 12], [13, 14, 15]]])
     )
 
