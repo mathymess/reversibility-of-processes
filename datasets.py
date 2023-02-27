@@ -1,13 +1,15 @@
 import numpy as np
 import torch
 
+from dataclasses import dataclass
+from typing import Optional
 import numpy.typing
 NDArray = numpy.typing.NDArray[np.floating]
 
 
 def chop_time_series_into_chunks(time_series: NDArray,
-                                 window_len: int = 40,
-                                 take_each_nth_window: int = 1) -> NDArray:
+                                 window_len: int,
+                                 take_each_nth_window: int) -> NDArray:
     assert time_series.ndim == 2, "Time series expected, each datapoint is a 1D array"
     assert len(time_series) >= window_len, f"window_len={window_len} is too large"
 
@@ -20,7 +22,7 @@ def chop_time_series_into_chunks(time_series: NDArray,
 def split_chunks_into_windows_and_targets(chunks: NDArray,
                                           target_len: int = 1,
                                           reverse: bool = False) -> tuple[NDArray, NDArray]:
-    assert chunks.ndim == 3, "Should be (n_chunks, chunk_len, datapoint_dim)"
+    assert chunks.ndim == 3, "Shape should be (n_chunks, chunk_len, datapoint_dim)"
 
     chunk_len: int = chunks.shape[1]
     assert 0 < target_len < chunk_len, f"target_len={target_len} is too large or non-positive"
@@ -39,6 +41,9 @@ def split_chunks_into_windows_and_targets(chunks: NDArray,
 class TimeSeriesDataset(torch.utils.data.Dataset):
     def __init__(self, windows: NDArray, targets: NDArray) -> None:
         assert len(windows) == len(targets) != 0
+        assert windows.ndim == 3
+        assert targets.ndim == 3
+        assert windows.shape[2] == targets.shape[2]
 
         super().__init__()
 
@@ -52,8 +57,59 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
     def __len__(self) -> int:
         return self.n_points
 
-    def datapoint_torch_size(self):
-        return self.windows[0][0]
+
+def time_series_to_dataset(ts: NDArray,
+                           window_len: int,
+                           take_each_nth_window: int,
+                           reverse: bool = False) -> TimeSeriesDataset:
+    chunks = chop_time_series_into_chunks(ts, window_len=window_len,
+                                          take_each_nth_window=take_each_nth_window)
+    windows, targets = split_chunks_into_windows_and_targets(chunks, reverse=reverse)
+    return TimeSeriesDataset(windows, targets)
+
+
+@dataclass
+class DataHolderOneDirection:
+    train_dataset: TimeSeriesDataset
+    test_dataset: TimeSeriesDataset
+    train_loader: torch.utils.data.DataLoader
+
+
+@dataclass
+class AllDataHolder:
+    forward: DataHolderOneDirection
+    backward: DataHolderOneDirection
+
+    test_ts: Optional[NDArray] = None
+    train_ts: Optional[NDArray] = None
+
+
+def prepare_time_series_for_learning(train_ts: NDArray,
+                                     test_ts: NDArray,
+                                     window_len: int = 40,
+                                     loader_batch_size: int = 20) -> AllDataHolder:
+    assert window_len >= 2
+    assert loader_batch_size >= 1
+
+    take_each_nth_window: int = window_len // 2
+
+    # Forward
+    train_dataset = time_series_to_dataset(train_ts, window_len=window_len,
+                                           take_each_nth_window=take_each_nth_window)
+    test_dataset = time_series_to_dataset(test_ts, window_len=window_len,
+                                          take_each_nth_window=take_each_nth_window)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=loader_batch_size)
+    forward = DataHolderOneDirection(train_dataset, test_dataset, train_loader)
+
+    # Backward
+    train_dataset = time_series_to_dataset(train_ts, window_len=window_len, reverse=True,
+                                           take_each_nth_window=take_each_nth_window)
+    test_dataset = time_series_to_dataset(test_ts, window_len=window_len, reverse=True,
+                                          take_each_nth_window=take_each_nth_window)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=loader_batch_size)
+    backward = DataHolderOneDirection(train_dataset, test_dataset, train_loader)
+
+    return AllDataHolder(forward, backward, test_ts=test_ts, train_ts=train_ts)
 
 
 def test_chop_time_series_into_chunks() -> None:
