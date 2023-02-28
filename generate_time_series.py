@@ -3,7 +3,7 @@ import numpy as np
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 
-from typing import Callable, Generator
+from typing import Callable, Generator, Optional
 import numpy.typing
 NDArray = numpy.typing.NDArray[np.floating]
 
@@ -174,7 +174,8 @@ def plot_2d_data(data: NDArray,
 def plot_data_componentwise(data: NDArray,
                             title: str = "Plotting multidimensional data componentwise",
                             close_before_plotting: bool = True,
-                            show: bool = True) -> None:
+                            show: bool = True,
+                            draw_window_len: Optional[int] = None) -> None:
     assert data.ndim == 2, "Expecting multidimensional data"
 
     if close_before_plotting:
@@ -187,8 +188,16 @@ def plot_data_componentwise(data: NDArray,
     for i in range(n_components):
         ax[i].plot(data[:, i])
         ax[i].scatter(range(len(data)), data[:, i])
-        ax[i].set_ylabel("xyzp"[i])
+        ax[i].set_ylabel(f"$x_{i}$")
         ax[i].grid()
+
+    if draw_window_len is not None:
+        for i in range(n_components):
+            fractions = (0.3, 0.5, 0.8)
+            y = [np.mean(data[:, i]) * x for x in fractions]
+            x_min = [int(len(data) * x) for x in fractions]
+            x_max = [x + draw_window_len for x in x_min]
+            ax[i].hlines(y, x_min, x_max, color='red', linewidth=2)
 
     if show:
         plt.show()
@@ -213,7 +222,8 @@ def explore_belousov_zhabotinsky_time_series() -> None:
     print(bzh.shape)
     # plot_3d_data(bzh, title="Belousov-Zhabotinsky time series", show=True)
     plot_data_componentwise(
-        bzh, title="Belousov-Zhabotinsky time series, componentwise", show=True)
+        bzh, title="Belousov-Zhabotinsky time series, componentwise",
+        show=True, draw_window_len=200)
 
 
 if __name__ == "__main__":
