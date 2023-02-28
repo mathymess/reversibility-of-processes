@@ -7,6 +7,21 @@ import numpy.typing
 NDArray = numpy.typing.NDArray[np.floating]
 
 
+def train_test_split(time_series: NDArray,
+                     train_test_ratio: float = 0.7,
+                     shift: int = 0) -> tuple[NDArray, NDArray]:
+    assert time_series.ndim == 2, "Time series expected, each datapoint is a 1D array"
+
+    split_index = int(len(time_series) * train_test_ratio)
+    time_series = np.roll(time_series, shift=shift)
+    train, test = time_series[:split_index], time_series[split_index:]
+
+    assert len(train) > 0, "Bad train-test split"
+    assert len(test) > 0, "Bad train-test split"
+
+    return train, test
+
+
 def chop_time_series_into_chunks(time_series: NDArray,
                                  chunk_len: int,
                                  take_each_nth_chunk: int,
@@ -114,6 +129,25 @@ def prepare_time_series_for_learning(train_ts: NDArray,
     return AllDataHolder(forward, backward, test_ts=test_ts, train_ts=train_ts)
 
 
+def test_train_test_split():
+    def compare(actual: tuple[NDArray, NDArray],
+                expected: tuple[NDArray, NDArray]) -> None:
+        assert len(actual) == len(expected) == 2
+        assert np.array_equal(actual[0], expected[0]), f"{actual} \n\t!=\n{expected}"
+        assert np.array_equal(actual[1], expected[1]), f"{actual} \n\t!=\n{expected}"
+
+    simple_data = np.array([[1], [2], [3], [4]])
+    compare(
+        train_test_split(simple_data, train_test_ratio=0.5),
+        (np.array([[1], [2]]), np.array([[3], [4]]))
+    )
+    compare(
+        train_test_split(simple_data, train_test_ratio=0.5, shift=1),
+        (np.array([[4], [1]]), np.array([[2], [3]]))
+    )
+    print("Tests for train_test_split passed successfully")
+
+
 def test_chop_time_series_into_chunks() -> None:
     def compare(actual: NDArray, expected: NDArray) -> None:
         assert np.array_equal(actual, expected), f"{actual} \n\t!=\n{expected}"
@@ -162,6 +196,8 @@ def test_chop_time_series_into_chunks() -> None:
         np.array([[[1, 2, 3], [4, 5, 6]], [[10, 11, 12], [13, 14, 15]]])
     )
 
+    print("Tests for chop_time_series_into_chunks passed successfully")
+
 
 def test_split_chunks_into_windows_and_targets() -> None:
     def compare(actual: tuple[NDArray, NDArray],
@@ -198,7 +234,10 @@ def test_split_chunks_into_windows_and_targets() -> None:
         )
     )
 
+    print("Tests for split_chunks_into_windows_and_targets passed successfully")
+
 
 if __name__ == "__main__":
+    test_train_test_split()
     test_chop_time_series_into_chunks()
     test_split_chunks_into_windows_and_targets()
