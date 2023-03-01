@@ -30,7 +30,7 @@ def chop_time_series_into_chunks(time_series: NDArray,
     assert len(time_series) >= chunk_len, f"chunk_len={chunk_len} is too large"
 
     if reverse:
-        time_series = np.flip(time_series, 0)
+        time_series = np.flip(time_series, axis=0)
 
     chunks = np.array([time_series[i:i+chunk_len]
                       for i in range(0, len(time_series) - chunk_len + 1, take_each_nth_chunk)])
@@ -104,11 +104,13 @@ class AllDataHolder:
 def prepare_time_series_for_learning(train_ts: NDArray,
                                      test_ts: NDArray,
                                      chunk_len: int = 40,
-                                     loader_batch_size: int = 20) -> AllDataHolder:
+                                     loader_batch_size: int = 20,
+                                     take_each_nth_chunk: Optional[int] = None) -> AllDataHolder:
     assert chunk_len >= 2
     assert loader_batch_size >= 1
 
-    take_each_nth_chunk: int = chunk_len // 2
+    if take_each_nth_chunk is None:
+        take_each_nth_chunk = int(chunk_len * 0.2)
 
     # Forward
     train_dataset = time_series_to_dataset(train_ts, chunk_len=chunk_len,
