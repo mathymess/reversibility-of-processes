@@ -11,6 +11,7 @@ def train_test_split(time_series: NDArray,
                      train_test_ratio: float = 0.7,
                      shift: int = 0) -> tuple[NDArray, NDArray]:
     assert time_series.ndim == 2, "Time series expected, each datapoint is a 1D array"
+    assert 0 < train_test_ratio < 1, "train_test_ratio should be within (0, 1) interval"
 
     split_index = int(len(time_series) * train_test_ratio)
     time_series = np.roll(time_series, shift=shift)

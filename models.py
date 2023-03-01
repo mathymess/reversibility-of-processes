@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 
 
@@ -21,13 +22,10 @@ class MyModel(nn.Module):
         self.fc3 = nn.Linear(in_features=self.hidden_layer_size2,
                              out_features=datapoint_size)
 
-    def forward(self, window):
-        # print(window, window.shape)
-        if window.shape[-1] == self.datapoint_size:
-            ret = window.flatten(window.ndim - 2)
-            # print(window, window.shape)
-        else:
-            ret = window
+    def forward(self, windows: torch.tensor):
+        # Flatten the last dimension of 'windows', i.e. remove []'s
+        # around each datapoint in the [batch of [windows of [datapoints]]].
+        ret = windows.flatten(start_dim=-2, end_dim=-1)
 
         ret = self.relu1(self.fc1(ret))
         ret = self.relu2(self.fc2(ret))
