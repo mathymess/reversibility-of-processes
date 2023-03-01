@@ -129,75 +129,91 @@ def load_belousov_zhabotinsky_time_series() -> NDArray:
     return bzh
 
 
-def plot_3d_data(data: NDArray,
+def plot_3d_data(*data: NDArray,
                  title: str = "",
                  close_before_plotting: bool = True,
                  show: bool = False) -> None:
-    assert data.ndim == 2 and data.shape[1] == 3, "Expecting 3-dimensional data"
+    assert len(data) > 0, "Forgot to pass the np.array parameter"
+    for d in data:
+        assert d.ndim == 2 and d.shape[1] == 3, f"Expecting series of 3D data, got '{d}'"
 
     if close_before_plotting:
         plt.close()
 
     ax = plt.figure().add_subplot(projection="3d")
-    ax.plot(*data.T, lw=0.5)
-    ax.scatter(*data.T, lw=0.5)
 
     ax.set_xlabel('x')
     ax.set_ylabel('y')
     ax.set_zlabel('z')
-    plt.title(title)
+    if title:
+        plt.title(title)
+
+    for d in data:
+        ax.plot(*d.T, lw=0.5)
+        ax.scatter(*d.T, lw=0.5)
 
     if show:
         plt.show()
 
 
-def plot_2d_data(data: NDArray,
+def plot_2d_data(*data: NDArray,
                  title: str = "",
                  close_before_plotting: bool = True,
                  show: bool = False) -> None:
-    assert data.ndim == 2 and data.shape[1] == 2, "Expecting 2-dimensional data"
+    assert len(data) > 0, "Forgot to pass the np.array parameter"
+    for d in data:
+        assert d.ndim == 2 and d.shape[1] == 2, f"Expecting series of 2D data, got '{d}'"
 
     if close_before_plotting:
         plt.close()
 
-    plt.plot(*data.T, lw=0.5)
-    plt.scatter(*data.T, lw=0.5)
-    plt.xlabel('x')
-    plt.ylabel('y')
-    plt.grid('y')
+    for d in data:
+        plt.plot(*d.T, lw=0.5)
+        plt.scatter(*d.T, lw=0.5)
+
     plt.title(title)
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.grid()
 
     if show:
         plt.show()
 
 
-def plot_data_componentwise(data: NDArray,
+def plot_data_componentwise(*data: NDArray,
                             title: str = "Plotting multidimensional data componentwise",
                             close_before_plotting: bool = True,
                             show: bool = True,
                             draw_window_len: Optional[int] = None) -> None:
-    assert data.ndim == 2, "Expecting multidimensional data"
+    assert len(data) > 0, "Forgot to pass the np.array parameter"
+    n_components = data[0].shape[1]
+    for d in data:
+        assert d.ndim == 2, f"Expecting multidimensional data, got '{d}'"
+        assert d.shape[1] == n_components, f"mismatched shapes: '{data}'"
 
     if close_before_plotting:
         plt.close()
 
-    n_components = data.shape[1]
     fig, ax = plt.subplots(n_components)
     ax[0].set_title(title)
 
     for i in range(n_components):
-        ax[i].plot(data[:, i])
-        ax[i].scatter(range(len(data)), data[:, i])
+        for d in data:
+            ax[i].plot(d[:, i])
+            ax[i].scatter(range(len(d)), d[:, i])
+
         ax[i].set_ylabel(f"$x_{i}$")
         ax[i].grid()
 
-    if draw_window_len is not None:
-        for i in range(n_components):
+        if draw_window_len is not None:
             fractions = (0.3, 0.5, 0.8)
-            y = [np.mean(data[:, i]) * x for x in fractions]
-            x_min = [int(len(data) * x) for x in fractions]
+            x_axis_limit = max(len(d) for d in data)
+            y_axis_limit = max(np.max(d) for d in data)
+
+            y = [y_axis_limit * f for f in fractions]
+            x_min = [x_axis_limit * f for f in fractions]
             x_max = [x + draw_window_len for x in x_min]
-            ax[i].hlines(y, x_min, x_max, color='red', linewidth=2)
+            ax[i].hlines(y, x_min, x_max, color="red", linewidth=2)
 
     if show:
         plt.show()
@@ -220,13 +236,13 @@ def explore_lorenz_attractor_time_series() -> None:
 def explore_belousov_zhabotinsky_time_series() -> None:
     bzh = load_belousov_zhabotinsky_time_series()
     print(bzh.shape)
-    # plot_3d_data(bzh, title="Belousov-Zhabotinsky time series", show=True)
+    plot_3d_data(bzh, title="Belousov-Zhabotinsky time series", show=True)
     plot_data_componentwise(
         bzh, title="Belousov-Zhabotinsky time series, componentwise",
         show=True, draw_window_len=200)
 
 
 if __name__ == "__main__":
-    # explore_two_body_time_series()
-    # explore_lorenz_attractor_time_series()
+    explore_two_body_time_series()
+    explore_lorenz_attractor_time_series()
     explore_belousov_zhabotinsky_time_series()
