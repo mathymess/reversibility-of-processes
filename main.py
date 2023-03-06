@@ -42,7 +42,7 @@ def get_mean_loss_on_test_dataset(model: MyModel,
     losses = np.zeros(len(test_dataset))
     with torch.no_grad():
         for i, (window, target) in enumerate(test_dataset):
-            losses[i] = loss_fn(model(window), target.squeeze(dim=0))
+            losses[i] = loss_fn(model(window), target)
         return losses.mean()
 
 
@@ -64,7 +64,7 @@ def train(model: MyModel,
             optim.zero_grad()
 
             preds = model(windows)
-            loss = loss_fn(preds, targets.squeeze(dim=1))
+            loss = loss_fn(preds, targets)
             loss.backward()
 
             optim.step()
