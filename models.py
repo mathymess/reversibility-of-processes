@@ -2,6 +2,10 @@ import torch
 import torch.nn as nn
 
 
+def get_number_of_parameters_in_model(model: nn.Module) -> int:
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
 class ThreeFullyConnectedLayers(nn.Module):
     def __init__(self, window_len: int, datapoint_size: int, target_len: int = 1,
                  hidden_layer1_size: int = 100, hidden_layer2_size: int = 100):
