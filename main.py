@@ -1,5 +1,8 @@
-from generate_time_series import *
-from datasets import *
+from generate_time_series import load_two_body_problem_time_series, \
+                                 load_lorenz_attractor_time_series, \
+                                 load_belousov_zhabotinsky_time_series
+from datasets import train_test_split, TimeSeriesDataset, \
+                     AllDataHolder, prepare_time_series_for_learning
 from models import ThreeFullyConnectedLayers
 
 import numpy as np
@@ -48,7 +51,7 @@ def get_mean_loss_on_test_dataset(model: ThreeFullyConnectedLayers,
 
 def train(model: ThreeFullyConnectedLayers,
           dataloader: torch.utils.data.DataLoader,
-          test_dataset: torch.utils.data.Dataset,
+          test_dataset: TimeSeriesDataset,
           num_epochs: int = 20,
           tensorboard_dir_suffix: str = "") -> None:
     tensorboard_dir = "runs/" + time.strftime("%Y%m%d_%H%M%S") + "." + tensorboard_dir_suffix
