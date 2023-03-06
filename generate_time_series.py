@@ -208,7 +208,7 @@ def plot_data_componentwise(*data: NDArray,
         if draw_window_len is not None:
             fractions = (0.3, 0.5, 0.8)
             x_axis_limit = max(len(d) for d in data)
-            y_axis_limit = max(np.max(d) for d in data)
+            y_axis_limit = max(np.max(d[: , i]) for d in data)
 
             y = [y_axis_limit * f for f in fractions]
             x_min = [x_axis_limit * f for f in fractions]
