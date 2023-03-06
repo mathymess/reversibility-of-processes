@@ -6,11 +6,14 @@ from train_test_utils import EpochlyCallback, train_loop
 import itertools
 
 
-def load_two_body_problem_dataholder(chunk_len: int, shift_ratio: float) -> AllDataHolder:
+def load_two_body_problem_dataholder(window_len: int,
+                                     target_len: int,
+                                     shift_ratio: float) -> AllDataHolder:
     assert 0 <= shift_ratio < 1
     twb = load_two_body_problem_time_series()
     twb_train, twb_test = train_test_split(twb, shift=shift_ratio)
-    dh = prepare_time_series_for_learning(twb_train, twb_test, chunk_len=chunk_len)
+    dh = prepare_time_series_for_learning(twb_train, twb_test,
+                                          window_len=window_len, target_len=target_len)
     return dh
 
 
@@ -21,7 +24,9 @@ def train_test_kepler(window_len: int = 30,
                       hidden_layer2_size: int = 100,
                       num_epochs: int = 15,
                       tensorboard_scalar_name: str = "mean_loss_on_test") -> None:
-    dh = load_two_body_problem_dataholder(chunk_len=window_len+1, shift_ratio=shift_ratio)
+    dh = load_two_body_problem_dataholder(window_len=window_len,
+                                          target_len=target_len,
+                                          shift_ratio=shift_ratio)
 
     # Forward
     forward_model = ThreeFullyConnectedLayers(window_len=window_len,
@@ -64,4 +69,5 @@ if __name__ == "__main__":
         train_test_kepler(window_len=30,
                           hidden_layer1_size=size,
                           hidden_layer2_size=size,
-                          tensorboard_scalar_name=scalar_name)
+                          tensorboard_scalar_name=scalar_name,
+                          num_epochs=int(size/2))

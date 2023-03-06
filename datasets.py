@@ -79,14 +79,15 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
 
 
 def time_series_to_dataset(ts: NDArray,
-                           chunk_len: int,
+                           window_len: int,
                            take_each_nth_chunk: int,
+                           target_len: int = 1,
                            reverse: bool = False) -> TimeSeriesDataset:
     chunks = chop_time_series_into_chunks(time_series=ts,
-                                          chunk_len=chunk_len,
+                                          chunk_len=window_len + target_len,
                                           take_each_nth_chunk=take_each_nth_chunk,
                                           reverse=reverse)
-    windows, targets = split_chunks_into_windows_and_targets(chunks)
+    windows, targets = split_chunks_into_windows_and_targets(chunks, target_len=target_len)
     return TimeSeriesDataset(windows, targets)
 
 
@@ -108,28 +109,30 @@ class AllDataHolder:
 
 def prepare_time_series_for_learning(train_ts: NDArray,
                                      test_ts: NDArray,
-                                     chunk_len: int = 40,
+                                     window_len: int = 40,
+                                     target_len: int = 1,
                                      loader_batch_size: int = 20,
                                      take_each_nth_chunk: Optional[int] = None) -> AllDataHolder:
-    assert chunk_len >= 2
+    assert window_len >= 2
+    assert target_len >= 1
     assert loader_batch_size >= 1
 
     if take_each_nth_chunk is None:
-        take_each_nth_chunk = int(chunk_len * 0.2)
+        take_each_nth_chunk = int((window_len + target_len) * 0.2)
 
     # Forward
-    train_dataset = time_series_to_dataset(train_ts, chunk_len=chunk_len,
+    train_dataset = time_series_to_dataset(train_ts, window_len=window_len, target_len=target_len,
                                            take_each_nth_chunk=take_each_nth_chunk)
-    test_dataset = time_series_to_dataset(test_ts, chunk_len=chunk_len,
+    test_dataset = time_series_to_dataset(test_ts, window_len=window_len, target_len=target_len,
                                           take_each_nth_chunk=take_each_nth_chunk)
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=loader_batch_size)
     forward = DataHolderOneDirection(train_dataset, test_dataset, train_loader)
 
     # Backward
-    train_dataset = time_series_to_dataset(train_ts, chunk_len=chunk_len, reverse=True,
-                                           take_each_nth_chunk=take_each_nth_chunk)
-    test_dataset = time_series_to_dataset(test_ts, chunk_len=chunk_len, reverse=True,
-                                          take_each_nth_chunk=take_each_nth_chunk)
+    train_dataset = time_series_to_dataset(train_ts, window_len=window_len, target_len=target_len,
+                                           reverse=True, take_each_nth_chunk=take_each_nth_chunk)
+    test_dataset = time_series_to_dataset(test_ts, window_len=window_len, target_len=target_len,
+                                          reverse=True, take_each_nth_chunk=take_each_nth_chunk)
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=loader_batch_size)
     backward = DataHolderOneDirection(train_dataset, test_dataset, train_loader)
 
