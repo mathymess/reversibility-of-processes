@@ -47,14 +47,14 @@ def train_test_kepler(window_len: int = 30,
                                         tensorboard_scalar_name=tensorboard_scalar_name)
     train_loop(backward_model,
                dh.backward.train_loader,
-               dh.forward.test_dataset,
+               dh.backward.test_dataset,
                num_epochs=num_epochs,
                epochly_callback=backward_callback)
 
 
 if __name__ == "__main__":
     for window_len, shift_ratio in itertools.product((5, 10, 30, 70, 110), (.1, .4, .7, .9)):
-        scalar_name = f"window_len:shift_ratio/{window_len}+{shift_ratio}"
+        scalar_name = f"window_len+shift_ratio/{window_len}+{shift_ratio}"
         train_test_kepler(window_len=window_len,
                           shift_ratio=shift_ratio,
                           tensorboard_scalar_name=scalar_name)

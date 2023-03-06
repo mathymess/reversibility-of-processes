@@ -47,7 +47,7 @@ def train_test_lorenz_attractor(window_len: int = 50,
                                         tensorboard_scalar_name=tensorboard_scalar_name)
     train_loop(backward_model,
                dh.backward.train_loader,
-               dh.forward.test_dataset,
+               dh.backward.test_dataset,
                num_epochs=num_epochs,
                epochly_callback=backward_callback)
 
