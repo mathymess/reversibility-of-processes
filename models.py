@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 
-class MyModel(nn.Module):
+class ThreeFullyConnectedLayers(nn.Module):
     def __init__(self, window_len: int, datapoint_size: int, target_len: int = 1,
                  hidden_layer1_size: int = 100, hidden_layer2_size: int = 100):
         super().__init__()
@@ -44,7 +44,7 @@ class MyModel(nn.Module):
 
 
 def test_model_output_dimensions() -> None:
-    model = MyModel(window_len=2, datapoint_size=3, target_len=2)
+    model = ThreeFullyConnectedLayers(window_len=2, datapoint_size=3, target_len=2)
 
     window = torch.tensor([[1., 2., 3.], [4., 5., 6.]])
     target = model(window)

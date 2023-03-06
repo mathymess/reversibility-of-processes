@@ -1,6 +1,6 @@
 from generate_time_series import *
 from datasets import *
-from models import MyModel
+from models import ThreeFullyConnectedLayers
 
 import numpy as np
 import time
@@ -36,7 +36,7 @@ def load_two_body_problem_dataholder(chunk_len: int, shift_ratio: float = 0) -> 
     return dh
 
 
-def get_mean_loss_on_test_dataset(model: MyModel,
+def get_mean_loss_on_test_dataset(model: ThreeFullyConnectedLayers,
                                   test_dataset: torch.utils.data.Dataset,
                                   loss_fn: Callable[..., float] = nn.MSELoss()) -> float:
     losses = np.zeros(len(test_dataset))
@@ -46,7 +46,7 @@ def get_mean_loss_on_test_dataset(model: MyModel,
         return losses.mean()
 
 
-def train(model: MyModel,
+def train(model: ThreeFullyConnectedLayers,
           dataloader: torch.utils.data.DataLoader,
           test_dataset: torch.utils.data.Dataset,
           num_epochs: int = 20,
@@ -83,13 +83,13 @@ def train_test_two_body_problem():
     # plot_data_componentwise(dh.train_ts, dh.test_ts, draw_window_len=40,
     #                         show=True, title="Lorenz time series, train/test")
 
-    train(MyModel(window_len=window_len, datapoint_size=2),
+    train(ThreeFullyConnectedLayers(window_len=window_len, datapoint_size=2),
           dh.forward.train_loader,
           dh.forward.test_dataset,
           num_epochs=20,
           tensorboard_dir_suffix="kepler_forward")
 
-    train(MyModel(window_len=window_len, datapoint_size=2),
+    train(ThreeFullyConnectedLayers(window_len=window_len, datapoint_size=2),
           dh.backward.train_loader,
           dh.backward.test_dataset,
           num_epochs=20,
@@ -103,13 +103,13 @@ def train_test_lorenz_attractor(window_len: int, shift_ratio: float) -> None:
     # plot_data_componentwise(dh.train_ts, dh.test_ts, draw_window_len=40,
     #                         show=True, title="Lorenz time series, train/test")
 
-    train(MyModel(window_len=window_len, datapoint_size=2),
+    train(ThreeFullyConnectedLayers(window_len=window_len, datapoint_size=2),
           dh.forward.train_loader,
           dh.forward.test_dataset,
           num_epochs=20,
           tensorboard_dir_suffix=f"lorenz_forward_shift={shift_ratio}_window={window_len}")
 
-    train(MyModel(window_len=window_len, datapoint_size=2),
+    train(ThreeFullyConnectedLayers(window_len=window_len, datapoint_size=2),
           dh.backward.train_loader,
           dh.forward.test_dataset,
           num_epochs=20,
