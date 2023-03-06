@@ -1,18 +1,11 @@
 from generate_time_series import load_two_body_problem_time_series, \
                                  load_lorenz_attractor_time_series, \
                                  load_belousov_zhabotinsky_time_series
-from datasets import train_test_split, TimeSeriesDataset, \
-                     AllDataHolder, prepare_time_series_for_learning
+from datasets import train_test_split, AllDataHolder, prepare_time_series_for_learning
 from models import ThreeFullyConnectedLayers
+from train_test_utils import EpochlyCallback, train_loop
 
-import numpy as np
-import time
-
-import torch
-import torch.nn as nn
-from torch.utils.tensorboard import SummaryWriter
-
-from typing import Callable
+import itertools
 
 
 def load_lorenz_attractor_dataholder(chunk_len: int, shift_ratio: float) -> AllDataHolder:
@@ -39,98 +32,54 @@ def load_two_body_problem_dataholder(chunk_len: int, shift_ratio: float = 0) -> 
     return dh
 
 
-def get_mean_loss_on_test_dataset(model: ThreeFullyConnectedLayers,
-                                  test_dataset: torch.utils.data.Dataset,
-                                  loss_fn: Callable[..., float] = nn.MSELoss()) -> float:
-    losses = np.zeros(len(test_dataset))
-    with torch.no_grad():
-        for i, (window, target) in enumerate(test_dataset):
-            losses[i] = loss_fn(model(window), target)
-        return losses.mean()
+def train_test_lorenz_attractor(window_len: int = 50,
+                                target_len: int = 1,
+                                shift_ratio: float = 0.,
+                                hidden_layer1_size: int = 100,
+                                hidden_layer2_size: int = 100,
+                                num_epochs: int = 20,
+                                tensorboard_scalar_name: str = "mean_loss_on_test") -> None:
+    dh = load_lorenz_attractor_dataholder(chunk_len=window_len+1, shift_ratio=shift_ratio)
 
+    # Forward
+    forward_model = ThreeFullyConnectedLayers(window_len=window_len,
+                                              target_len=target_len,
+                                              datapoint_size=3,
+                                              hidden_layer1_size=hidden_layer1_size,
+                                              hidden_layer2_size=hidden_layer2_size)
+    forward_callback = EpochlyCallback(tensorboard_log_dir="runs/20230306_lorenz/forward/",
+                                       tensorboard_scalar_name=tensorboard_scalar_name)
+    train_loop(forward_model,
+               dh.forward.train_loader,
+               dh.forward.test_dataset,
+               num_epochs=20,
+               epochly_callback=forward_callback)
 
-def train(model: ThreeFullyConnectedLayers,
-          dataloader: torch.utils.data.DataLoader,
-          test_dataset: TimeSeriesDataset,
-          num_epochs: int = 20,
-          tensorboard_dir_suffix: str = "") -> None:
-    tensorboard_dir = "runs/" + time.strftime("%Y%m%d_%H%M%S") + "." + tensorboard_dir_suffix
-    writer = SummaryWriter(log_dir=tensorboard_dir)
-
-    loss_fn = nn.MSELoss()
-
-    # optim = torch.optim.SGD(model.parameters(), lr=0.1)
-    optim = torch.optim.Adam(model.parameters())
-
-    for epoch in range(num_epochs):
-        for i, (windows, targets) in enumerate(dataloader):
-            optim.zero_grad()
-
-            preds = model(windows)
-            loss = loss_fn(preds, targets)
-            loss.backward()
-
-            optim.step()
-
-        mean_test_loss = get_mean_loss_on_test_dataset(model, test_dataset)
-        writer.add_scalar("loss_on_test",  mean_test_loss, epoch)
-
-    writer.close()
-
-
-def train_test_two_body_problem():
-    window_len = 30
-    dh = load_two_body_problem_dataholder(chunk_len=window_len+1,
-                                          shift_ratio=0.9)
-    # plot_3d_data(dh.train_ts, dh.test_ts, show=True, title="Lorenz time series, train/test")
-    # plot_data_componentwise(dh.train_ts, dh.test_ts, draw_window_len=40,
-    #                         show=True, title="Lorenz time series, train/test")
-
-    train(ThreeFullyConnectedLayers(window_len=window_len, datapoint_size=2),
-          dh.forward.train_loader,
-          dh.forward.test_dataset,
-          num_epochs=20,
-          tensorboard_dir_suffix="kepler_forward")
-
-    train(ThreeFullyConnectedLayers(window_len=window_len, datapoint_size=2),
-          dh.backward.train_loader,
-          dh.backward.test_dataset,
-          num_epochs=20,
-          tensorboard_dir_suffix="kepler_backward")
-
-
-def train_test_lorenz_attractor(window_len: int, shift_ratio: float) -> None:
-    dh = load_two_body_problem_dataholder(chunk_len=window_len+1,
-                                          shift_ratio=0.9)
-    # plot_3d_data(dh.train_ts, dh.test_ts, show=True, title="Lorenz time series, train/test")
-    # plot_data_componentwise(dh.train_ts, dh.test_ts, draw_window_len=40,
-    #                         show=True, title="Lorenz time series, train/test")
-
-    train(ThreeFullyConnectedLayers(window_len=window_len, datapoint_size=2),
-          dh.forward.train_loader,
-          dh.forward.test_dataset,
-          num_epochs=20,
-          tensorboard_dir_suffix=f"lorenz_forward_shift={shift_ratio}_window={window_len}")
-
-    train(ThreeFullyConnectedLayers(window_len=window_len, datapoint_size=2),
-          dh.backward.train_loader,
-          dh.forward.test_dataset,
-          num_epochs=20,
-          tensorboard_dir_suffix=f"lorenz_backward_shift={shift_ratio}_window={window_len}")
+    # Backward
+    backward_model = ThreeFullyConnectedLayers(window_len=window_len,
+                                               target_len=target_len,
+                                               datapoint_size=3,
+                                               hidden_layer1_size=hidden_layer1_size,
+                                               hidden_layer2_size=hidden_layer2_size)
+    backward_callback = EpochlyCallback(tensorboard_log_dir="runs/20230306_lorenz/backward/",
+                                        tensorboard_scalar_name=tensorboard_scalar_name)
+    train_loop(backward_model,
+               dh.backward.train_loader,
+               dh.forward.test_dataset,
+               num_epochs=20,
+               epochly_callback=backward_callback)
 
 
 if __name__ == "__main__":
-    train_test_lorenz_attractor(window_len=30, shift_ratio=0.1)
-    train_test_lorenz_attractor(window_len=30, shift_ratio=0.4)
-    train_test_lorenz_attractor(window_len=30, shift_ratio=0.7)
-    train_test_lorenz_attractor(window_len=30, shift_ratio=0.9)
+    for window_len, shift_ratio in itertools.product((10, 30, 70, 110), (.1, .4, .7, .9)):
+        scalar_name = f"window_len:shift_ratio/{window_len}+{shift_ratio}"
+        train_test_lorenz_attractor(window_len=window_len,
+                                    shift_ratio=shift_ratio,
+                                    tensorboard_scalar_name=scalar_name)
 
-    train_test_lorenz_attractor(window_len=70, shift_ratio=0.1)
-    train_test_lorenz_attractor(window_len=70, shift_ratio=0.4)
-    train_test_lorenz_attractor(window_len=70, shift_ratio=0.7)
-    train_test_lorenz_attractor(window_len=70, shift_ratio=0.9)
-
-    train_test_lorenz_attractor(window_len=110, shift_ratio=0.1)
-    train_test_lorenz_attractor(window_len=110, shift_ratio=0.4)
-    train_test_lorenz_attractor(window_len=110, shift_ratio=0.7)
-    train_test_lorenz_attractor(window_len=110, shift_ratio=0.9)
+    for size in (300, 250, 200, 150, 110, 80, 60, 40, 25, 15):
+        scalar_name = f"hidden_layer_size_at_window50/{size}"
+        train_test_lorenz_attractor(window_len=50,
+                                    hidden_layer1_size=size,
+                                    hidden_layer2_size=size,
+                                    tensorboard_scalar_name=scalar_name)
