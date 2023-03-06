@@ -1,6 +1,4 @@
-from generate_time_series import load_two_body_problem_time_series, \
-                                 load_lorenz_attractor_time_series, \
-                                 load_belousov_zhabotinsky_time_series
+from generate_time_series import load_lorenz_attractor_time_series
 from datasets import train_test_split, AllDataHolder, prepare_time_series_for_learning
 from models import ThreeFullyConnectedLayers
 from train_test_utils import EpochlyCallback, train_loop
@@ -13,22 +11,6 @@ def load_lorenz_attractor_dataholder(chunk_len: int, shift_ratio: float) -> AllD
     lrz = load_lorenz_attractor_time_series()
     lrz_train, lrz_test = train_test_split(lrz, shift=shift_ratio)
     dh = prepare_time_series_for_learning(lrz_train, lrz_test, chunk_len=chunk_len)
-    return dh
-
-
-def load_belousov_zhabotinsky_dataholder(chunk_len: int, shift_ratio: float = 0) -> AllDataHolder:
-    assert 0 <= shift_ratio < 1
-    bzh = load_belousov_zhabotinsky_time_series()
-    bzh_train, bzh_test = train_test_split(bzh, shift=shift_ratio)
-    dh = prepare_time_series_for_learning(bzh_train, bzh_test, chunk_len=chunk_len)
-    return dh
-
-
-def load_two_body_problem_dataholder(chunk_len: int, shift_ratio: float = 0) -> AllDataHolder:
-    assert 0 <= shift_ratio < 1
-    twb = load_two_body_problem_time_series()
-    twb_train, twb_test = train_test_split(twb, shift=shift_ratio)
-    dh = prepare_time_series_for_learning(twb_train, twb_test, chunk_len=chunk_len)
     return dh
 
 
@@ -52,7 +34,7 @@ def train_test_lorenz_attractor(window_len: int = 50,
     train_loop(forward_model,
                dh.forward.train_loader,
                dh.forward.test_dataset,
-               num_epochs=20,
+               num_epochs=num_epochs,
                epochly_callback=forward_callback)
 
     # Backward
@@ -66,7 +48,7 @@ def train_test_lorenz_attractor(window_len: int = 50,
     train_loop(backward_model,
                dh.backward.train_loader,
                dh.forward.test_dataset,
-               num_epochs=20,
+               num_epochs=num_epochs,
                epochly_callback=backward_callback)
 
 
