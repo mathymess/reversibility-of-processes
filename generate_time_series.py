@@ -208,7 +208,7 @@ def plot_data_componentwise(*data: NDArray,
         if draw_window_len is not None:
             fractions = (0.3, 0.5, 0.8)
             x_axis_limit = max(len(d) for d in data)
-            y_axis_limit = max(np.max(d[: , i]) for d in data)
+            y_axis_limit = max(np.max(d[:, i]) for d in data)
 
             y = [y_axis_limit * f for f in fractions]
             x_min = [x_axis_limit * f for f in fractions]
@@ -223,7 +223,7 @@ def explore_two_body_time_series() -> None:
     twb = load_two_body_problem_time_series()
     print(twb.shape)
     plot_2d_data(twb, title="2-body problem", show=True)
-    plot_data_componentwise(twb, title="2-body problem", show=True)
+    plot_data_componentwise(twb, title="2-body problem, componentwise", show=True)
 
 
 def explore_lorenz_attractor_time_series() -> None:
