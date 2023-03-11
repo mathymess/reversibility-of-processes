@@ -39,6 +39,7 @@ def chop_time_series_into_chunks(time_series: NDArray,
 
     chunks = np.array([time_series[i:i+chunk_len]
                       for i in range(0, len(time_series) - chunk_len + 1, take_each_nth_chunk)])
+    chunks = chunks.copy()  # Being extra cautious: prevent edit-by-reference error.
 
     return chunks
 
@@ -54,6 +55,10 @@ def split_chunks_into_windows_and_targets(chunks: NDArray,
 
     windows: NDArray = chunks[:, :window_len, :]
     targets: NDArray = chunks[:, window_len:, :]
+
+    # Being extra cautious: prevent edit-by-reference error.
+    windows = windows.copy()
+    targets = targets.copy()
 
     return windows, targets
 
