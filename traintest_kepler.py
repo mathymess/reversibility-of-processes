@@ -34,7 +34,7 @@ def train_test_kepler(window_len: int = 30,
                                               datapoint_size=2,
                                               hidden_layer1_size=hidden_layer1_size,
                                               hidden_layer2_size=hidden_layer2_size)
-    forward_callback = EpochlyCallback(tensorboard_log_dir="runs/20230306_kepler/forward/",
+    forward_callback = EpochlyCallback(tensorboard_log_dir="runs/20230311_kepler/forward/",
                                        tensorboard_scalar_name=tensorboard_scalar_name)
     train_loop(forward_model,
                dh.forward.train_loader,
@@ -48,7 +48,7 @@ def train_test_kepler(window_len: int = 30,
                                                datapoint_size=2,
                                                hidden_layer1_size=hidden_layer1_size,
                                                hidden_layer2_size=hidden_layer2_size)
-    backward_callback = EpochlyCallback(tensorboard_log_dir="runs/20230306_kepler/backward/",
+    backward_callback = EpochlyCallback(tensorboard_log_dir="runs/20230311_kepler/backward/",
                                         tensorboard_scalar_name=tensorboard_scalar_name)
     train_loop(backward_model,
                dh.backward.train_loader,
@@ -62,7 +62,8 @@ if __name__ == "__main__":
         scalar_name = f"window_len+shift_ratio/{window_len}+{shift_ratio}"
         train_test_kepler(window_len=window_len,
                           shift_ratio=shift_ratio,
-                          tensorboard_scalar_name=scalar_name)
+                          tensorboard_scalar_name=scalar_name,
+                          num_epochs=30)
 
     for size in (300, 250, 200, 150, 110, 80, 60, 40, 25, 15):
         scalar_name = f"hidden_layer_size_at_window30/{size}"
@@ -70,4 +71,4 @@ if __name__ == "__main__":
                           hidden_layer1_size=size,
                           hidden_layer2_size=size,
                           tensorboard_scalar_name=scalar_name,
-                          num_epochs=int(size/2))
+                          num_epochs=30 if size < 100 else 60)
