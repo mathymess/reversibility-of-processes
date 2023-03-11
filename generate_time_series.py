@@ -1,3 +1,4 @@
+import functools
 import math
 import numpy as np
 from scipy.integrate import odeint
@@ -91,40 +92,39 @@ def generate_time_series_for_system(system: Callable[[NDArray, float], NDArray],
     return sol
 
 
-def load_two_body_problem_time_series() -> NDArray:
-    def two_body_problem_ode_with_coefs(x: NDArray, _t: float) -> NDArray:
-        return two_body_problem_ode(x, _t, coef=-1)
-
-    twb = generate_time_series_for_system(two_body_problem_ode_with_coefs,
-                                          initial_conditions=np.array([-1, 2, 0.2, 0.1]),
-                                          t_density=400,
-                                          t_duration=8,
+def load_two_body_problem_time_series(coef: float = -1.,
+                                      initial_conditions: NDArray = np.array([-1, 2, 0.2, 0.1]),
+                                      t_density: float = 400,
+                                      t_duration: float = 8) -> NDArray:
+    twb = generate_time_series_for_system(functools.partial(two_body_problem_ode, coef=coef),
+                                          initial_conditions=initial_conditions,
+                                          t_density=t_density,
+                                          t_duration=t_duration,
                                           second_order_ode_drop_half=True)
     return twb
 
 
-def load_lorenz_attractor_time_series() -> NDArray:
-    def lorenz_attractor_ode_with_coefs(x: NDArray, _t: float) -> NDArray:
-        return lorenz_attractor_ode(x, _t, coefs=(10, 28, 2.667))
-
-    lrz = generate_time_series_for_system(lorenz_attractor_ode_with_coefs,
-                                          initial_conditions=np.array([-10., -10, 28]),
-                                          t_density=100,
-                                          t_duration=100)
+def load_lorenz_attractor_time_series(coefs: tuple[float, float, float] = (10, 28, 2.667),
+                                      initial_conditions: NDArray = np.array([-10., -10, 28]),
+                                      t_density: float = 100.,
+                                      t_duration: float = 100.) -> NDArray:
+    lrz = generate_time_series_for_system(functools.partial(lorenz_attractor_ode, coefs=coefs),
+                                          initial_conditions=initial_conditions,
+                                          t_density=t_density,
+                                          t_duration=t_duration)
     return lrz
 
 
-def load_belousov_zhabotinsky_time_series() -> NDArray:
-    def belousov_zhabotinsky_ode_with_coefs(x: NDArray, _t: float) -> NDArray:
-        # coefs = (8e-4, 0.666, 1 / 4e-2, 1 / 4e-4)
-        coefs = (5e-3, 0.6, 1 / 2e-2, 1 / 4e-4)
-        return belousov_zhabotinsky_ode(x, _t, coefs)
-
+def load_belousov_zhabotinsky_time_series(
+        coefs: tuple[float, float, float, float] = (5e-3, 0.6, 1 / 2e-2, 1 / 4e-4),
+        initial_conditions: NDArray = np.array([0., 0.5, 0.3]),
+        t_density: float = 300.,
+        t_duration: float = 100.) -> NDArray:
     bzh = generate_time_series_for_system(
-        belousov_zhabotinsky_ode_with_coefs,
-        initial_conditions=np.array([0., 0.5, 0.3]),
-        t_density=300,
-        t_duration=100)
+        functools.partial(belousov_zhabotinsky_ode, coefs=coefs),
+        initial_conditions=initial_conditions,
+        t_density=t_density,
+        t_duration=t_duration)
 
     return bzh
 
