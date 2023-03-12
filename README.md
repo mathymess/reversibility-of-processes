@@ -11,7 +11,7 @@ In this project we use primitive ML to test the following hypothesis: if the pro
 
 ## Tensorboard history
 
-### 2, 20230312, commit `648cf7c`
+### 2, 20230312, commit `648cf7c`, tag `tensorboard2`
 
 Redo the exact same plots with few minor fixes.
 
@@ -19,7 +19,7 @@ Redo the exact same plots with few minor fixes.
 - [Belousov-Zhabotinsky](https://tensorboard.dev/experiment/LyNtPio7TdSri93mRq1l3g/)
 - [Lorenz](https://tensorboard.dev/experiment/jbwsyZyPT6iBbJPfB3QEdw/)
 
-### 1, 20230306, commit `1f4f3fa`
+### 1, 20230306, commit `1f4f3fa`, tag `tensorboard1`
 
 - [Kepler](https://tensorboard.dev/experiment/MOjL9KUlR0ik1Dvr4au7CQ/)
 - [Belousov-Zhabotinsky](https://tensorboard.dev/experiment/T8aXeU7DSRClvkvARzdjkg/)
