@@ -11,11 +11,19 @@ In this project we use primitive ML to test the following hypothesis: if the pro
 
 ## Tensorboard history
 
-### commit `1f4f3fa`
+### 2, 20230312, commit `648cf7c`
 
-- Kepler `traintest_kepler.py`: https://tensorboard.dev/experiment/MOjL9KUlR0ik1Dvr4au7CQ/
-- Belousov-Zhabotinsky `traintest_belousov_zhabotinsky.py`: https://tensorboard.dev/experiment/T8aXeU7DSRClvkvARzdjkg/
-- Lorenz `traintest_lorenz.py`: https://tensorboard.dev/experiment/jAuEyWfpQCWJgxiwlZnBqg/
+Redo the exact same plots with few minor fixes.
+
+- [Kepler](https://tensorboard.dev/experiment/NmioEasRR023gljiQKdsyQ/)
+- [Belousov-Zhabotinsky](https://tensorboard.dev/experiment/LyNtPio7TdSri93mRq1l3g/)
+- [Lorenz](https://tensorboard.dev/experiment/jbwsyZyPT6iBbJPfB3QEdw/)
+
+### 1, 20230306, commit `1f4f3fa`
+
+- [Kepler](https://tensorboard.dev/experiment/MOjL9KUlR0ik1Dvr4au7CQ/)
+- [Belousov-Zhabotinsky](https://tensorboard.dev/experiment/T8aXeU7DSRClvkvARzdjkg/)
+- [Lorenz](https://tensorboard.dev/experiment/jAuEyWfpQCWJgxiwlZnBqg/)
 
 For each of three physical systems, I vary (1) the hidden layer size at fixed `window_len` and (2) `window_len` and `shift_ratio` at fixed hidden layer size.
 `shift_ratio` defines which part of the periodic trajectory we consider to be the test and which to be the train data.
