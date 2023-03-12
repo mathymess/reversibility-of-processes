@@ -117,7 +117,7 @@ def load_lorenz_attractor_time_series(coefs: tuple[float, float, float] = (10, 2
 
 def load_belousov_zhabotinsky_time_series(
         coefs: tuple[float, float, float, float] = (5e-3, 0.6, 1 / 2e-2, 1 / 4e-4),
-        initial_conditions: NDArray = np.array([0., 0.5, 0.3]),
+        initial_conditions: NDArray = np.array([0., 17, 0.28]),
         t_density: float = 300.,
         t_duration: float = 100.) -> NDArray:
     bzh = generate_time_series_for_system(
