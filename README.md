@@ -20,7 +20,7 @@ I rerun the same learning process 3 times, each labeled by one of the letters `a
 An observation: for small hidden_layer_size, loss usually stops at value > 10, implying the model doesn't learn.
 
 - [Kepler](https://tensorboard.dev/experiment/lQ62rBh6TDG9cDSg0s8lDQ/)
-- [Belousov-Zhabotinsky](https://tensorboard.dev/experiment/GNzNl6v8RgO9HkwWk8S5QA/)
+- [Belousov-Zhabotinsky](https://tensorboard.dev/experiment/UmfOElNZRRqdd3kt9LbzKg/)
 - [Lorenz](https://tensorboard.dev/experiment/NNyGP2F0T3KHZbvurDLvsw/)
 
 ### 2, 20230312, git tag `tensorboard2`
