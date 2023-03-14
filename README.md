@@ -1,4 +1,4 @@
-# Analyzing reversibility of physical process with ML
+# Analyzing reversibility of physical processes with ML
 
 Time irreversibility is a fundamental concept in physics, and the analysis of this property can provide insights into the underlying physical laws that govern the universe.
 However, the study of time irreversibility is often limited to mathematical models and computational simulations, and it can be challenging to gain a deeper understanding of the underlying principles.
