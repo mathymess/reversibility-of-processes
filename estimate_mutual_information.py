@@ -42,9 +42,17 @@ def calculate_mutual_info_for_dataset(ts: NDArray, dim: int = 0) -> tuple[NDArra
             mutual_info_regression(backward_windows, backward_targets))
 
 
+def print_mutual_info(ts: NDArray, comment: str) -> None:
+    forward, backward = calculate_mutual_info_for_dataset(ts)
+    print(comment, "forward", forward)
+    print(comment, "backward", backward)
+
+
 if __name__ == "__main__":
-    print(calculate_mutual_info_for_dataset(load_two_body_problem_time_series()))
-    print(calculate_mutual_info_for_dataset(load_belousov_zhabotinsky_time_series()))
-    print(calculate_mutual_info_for_dataset(load_lorenz_attractor_time_series()))
+    print_mutual_info(load_two_body_problem_time_series(), "kepler")
+    print()
+    print_mutual_info(load_belousov_zhabotinsky_time_series(), "belousov_zhabotinsky")
+    print()
+    print_mutual_info(load_lorenz_attractor_time_series(), "lorenz")
 
     # The numbers are roughly the same for both forward/backward directions.
