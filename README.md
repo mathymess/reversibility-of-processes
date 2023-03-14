@@ -11,7 +11,19 @@ In this project we use primitive ML to test the following hypothesis: if the pro
 
 ## Tensorboard history
 
-### 2, 20230312, commit `648cf7c`, tag `tensorboard2`
+### 3, 20230313, git tag `tensorboard3`
+
+Test dataset is the same as train to avoid randomization and sampling bias observed in `tensorboard2`.
+For each system, there are ~50 learning curves with hidden_layer_size going from 1 to 20.
+This corresponds to the total number of parameters in `ThreeFullyConnectedLayers` ranging from ~0.1k to ~2k.
+I rerun the same learning process 3 times, each labeled by one of the letters `a,b,c` to make up for some randomness due to randomized batching in `torch.utils.data.DataLoader` and initial weights.
+An observation: for small hidden_layer_size, loss usually stops at value > 10, implying the model doesn't learn.
+
+- [Kepler](https://tensorboard.dev/experiment/lQ62rBh6TDG9cDSg0s8lDQ/)
+- [Belousov-Zhabotinsky](https://tensorboard.dev/experiment/GNzNl6v8RgO9HkwWk8S5QA/)
+- [Lorenz](https://tensorboard.dev/experiment/NNyGP2F0T3KHZbvurDLvsw/)
+
+### 2, 20230312, git tag `tensorboard2`
 
 Redo the exact same plots with few minor fixes.
 
@@ -19,7 +31,7 @@ Redo the exact same plots with few minor fixes.
 - [Belousov-Zhabotinsky](https://tensorboard.dev/experiment/LyNtPio7TdSri93mRq1l3g/)
 - [Lorenz](https://tensorboard.dev/experiment/jbwsyZyPT6iBbJPfB3QEdw/)
 
-### 1, 20230306, commit `1f4f3fa`, tag `tensorboard1`
+### 1, 20230306, git tag `tensorboard1`
 
 - [Kepler](https://tensorboard.dev/experiment/MOjL9KUlR0ik1Dvr4au7CQ/)
 - [Belousov-Zhabotinsky](https://tensorboard.dev/experiment/T8aXeU7DSRClvkvARzdjkg/)
