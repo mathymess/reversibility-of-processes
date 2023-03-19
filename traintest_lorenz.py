@@ -1,7 +1,11 @@
 from generate_time_series import load_lorenz_attractor_time_series
 from datasets import AllDataHolder, prepare_time_series_for_learning
 from models import ThreeFullyConnectedLayers
-from train_test_utils import EpochlyCallback, train_loop
+
+from train_test_utils import EpochlyCallback, train_loop_adam
+from train_test_utils import train_loop_adam_with_scheduler, train_loop_rmsprop
+
+from typing import Callable
 
 
 def load_lorenz_attractor_dataholder(window_len: int,
@@ -16,10 +20,11 @@ def load_lorenz_attractor_dataholder(window_len: int,
     return dh
 
 
-def train_test_lorenz(window_len: int = 50,
+def train_test_lorenz(train_loop: Callable,
+                      window_len: int = 30,
                       target_len: int = 1,
-                      hidden_layer1_size: int = 100,
-                      hidden_layer2_size: int = 100,
+                      hidden_layer1_size: int = 10,
+                      hidden_layer2_size: int = 10,
                       num_epochs: int = 50,
                       tensorboard_scalar_name: str = "mean_loss_on_test") -> None:
     dh = load_lorenz_attractor_dataholder(window_len=window_len, target_len=target_len)
@@ -30,7 +35,7 @@ def train_test_lorenz(window_len: int = 50,
                                               datapoint_size=3,
                                               hidden_layer1_size=hidden_layer1_size,
                                               hidden_layer2_size=hidden_layer2_size)
-    forward_callback = EpochlyCallback(tensorboard_log_dir="runs/20230313_lorenz/forward/",
+    forward_callback = EpochlyCallback(tensorboard_log_dir="runs/20230319_lorenz/forward/",
                                        tensorboard_scalar_name=tensorboard_scalar_name)
     train_loop(forward_model,
                dh.forward.train_loader,
@@ -44,7 +49,7 @@ def train_test_lorenz(window_len: int = 50,
                                                datapoint_size=3,
                                                hidden_layer1_size=hidden_layer1_size,
                                                hidden_layer2_size=hidden_layer2_size)
-    backward_callback = EpochlyCallback(tensorboard_log_dir="runs/20230313_lorenz/backward/",
+    backward_callback = EpochlyCallback(tensorboard_log_dir="runs/20230319_lorenz/backward/",
                                         tensorboard_scalar_name=tensorboard_scalar_name)
     train_loop(backward_model,
                dh.backward.train_loader,
@@ -54,10 +59,17 @@ def train_test_lorenz(window_len: int = 50,
 
 
 if __name__ == "__main__":
-    for size in range(1, 20):
-        for attempt in "abc":
-            scalar_name = f"hidden_layer_size/{size}{attempt}"
-            train_test_lorenz(window_len=30,
-                              hidden_layer1_size=size,
-                              hidden_layer2_size=size,
-                              tensorboard_scalar_name=scalar_name)
+    for attempt in range(15):
+        scalar_name = f"adam/attempt{attempt}"
+        train_test_lorenz(train_loop_adam,
+                          tensorboard_scalar_name=scalar_name)
+
+    for attempt in range(15):
+        scalar_name = f"rmsprop/attempt{attempt}"
+        train_test_lorenz(train_loop_rmsprop,
+                          tensorboard_scalar_name=scalar_name)
+
+    for attempt in range(15):
+        scalar_name = f"adam_with_scheduler/attempt{attempt}"
+        train_test_lorenz(train_loop_adam_with_scheduler,
+                          tensorboard_scalar_name=scalar_name)
