@@ -20,6 +20,9 @@ class ThreeFullyConnectedLayers(nn.Module):
 
         self._init_layers()
 
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.to(device=device)
+
     def _init_layers(self):
         self.fc1 = nn.Linear(in_features=self.window_len * self.datapoint_size,
                              out_features=self.hidden_layer1_size)

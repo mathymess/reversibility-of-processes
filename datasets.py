@@ -72,8 +72,9 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
 
         super().__init__()
 
-        self.windows = torch.from_numpy(windows).to(torch.float32)
-        self.targets = torch.from_numpy(targets).to(torch.float32)
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.windows = torch.from_numpy(windows).to(device=device, dtype=torch.float32)
+        self.targets = torch.from_numpy(targets).to(device=device, dtype=torch.float32)
         self.n_points: int = len(windows)
 
     def __getitem__(self, index: int) -> Tuple:
