@@ -11,7 +11,7 @@ In this project we use primitive ML to test the following hypothesis: if the pro
 
 ## Tensorboard history
 
-### 3, 20230313, git tag `tensorboard3`
+### 2, 20230313, git tag `tensorboard3`
 
 Test dataset is the same as train to avoid randomization and sampling bias observed in `tensorboard2`.
 For each system, there are ~50 learning curves with hidden_layer_size going from 1 to 20.
@@ -23,7 +23,7 @@ An observation: for small hidden_layer_size, loss usually stops at value > 10, i
 - [Belousov-Zhabotinsky](https://tensorboard.dev/experiment/UmfOElNZRRqdd3kt9LbzKg/)
 - [Lorenz](https://tensorboard.dev/experiment/NNyGP2F0T3KHZbvurDLvsw/)
 
-### 2, 20230312, git tag `tensorboard2`
+### 1.1, 20230312, git tag `tensorboard2`
 
 Redo the exact same plots with few minor fixes.
 
