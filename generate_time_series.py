@@ -4,7 +4,7 @@ import numpy as np
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 
-from typing import Callable, Generator, Optional
+from typing import Callable, Generator, Optional, Union, Tuple
 import numpy.typing
 NDArray = numpy.typing.NDArray[np.floating]
 
@@ -18,7 +18,7 @@ def harmonic_oscillator(amplitude: float = 1.,
         t += delta_t
 
 
-def pull_data_from_generator(generator: Generator[NDArray | float, None, None],
+def pull_data_from_generator(generator: Generator[Union[NDArray, float], None, None],
                              n_points: int = 10000) -> NDArray:
     return np.fromiter(generator, dtype=np.float64, count=n_points)
 
@@ -33,7 +33,7 @@ def harmonic_oscillator_ode(x: NDArray, _t: float) -> NDArray:
 
 
 def belousov_zhabotinsky_ode(x: NDArray, _t: float,
-                             coefs: tuple[float, ...] = (5e-3, 0.6, 1 / 2e-2, 1 / 4e-4)) -> NDArray:
+                             coefs: Tuple[float, ...] = (5e-3, 0.6, 1 / 2e-2, 1 / 4e-4)) -> NDArray:
     assert x.shape == (3,)
     A, B, C, D = coefs
     x_dot = np.zeros(3)
@@ -63,7 +63,7 @@ def two_body_problem_ode(x: NDArray, _t: float, coef: float = -1) -> NDArray:
 
 
 def lorenz_attractor_ode(x: NDArray, _t: float,
-                         coefs: tuple[float, ...] = (10, 28, 2.667)) -> NDArray:
+                         coefs: Tuple[float, ...] = (10, 28, 2.667)) -> NDArray:
     # From https://matplotlib.org/stable/gallery/mplot3d/lorenz_attractor.html
     assert x.shape == (3,)
     A, B, C = coefs
@@ -104,7 +104,7 @@ def load_two_body_problem_time_series(coef: float = -1.,
     return twb
 
 
-def load_lorenz_attractor_time_series(coefs: tuple[float, float, float] = (10, 28, 2.667),
+def load_lorenz_attractor_time_series(coefs: Tuple[float, float, float] = (10, 28, 2.667),
                                       initial_conditions: NDArray = np.array([-10., -10, 28]),
                                       t_density: float = 100.,
                                       t_duration: float = 100.) -> NDArray:
@@ -116,7 +116,7 @@ def load_lorenz_attractor_time_series(coefs: tuple[float, float, float] = (10, 2
 
 
 def load_belousov_zhabotinsky_time_series(
-        coefs: tuple[float, float, float, float] = (5e-3, 0.6, 1 / 2e-2, 1 / 4e-4),
+        coefs: Tuple[float, float, float, float] = (5e-3, 0.6, 1 / 2e-2, 1 / 4e-4),
         initial_conditions: NDArray = np.array([0., 17, 0.28]),
         t_density: float = 300.,
         t_duration: float = 100.) -> NDArray:

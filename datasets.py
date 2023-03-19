@@ -2,14 +2,14 @@ import numpy as np
 import torch
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Tuple, Union
 import numpy.typing
 NDArray = numpy.typing.NDArray[np.floating]
 
 
 def train_test_split(time_series: NDArray,
                      train_test_ratio: float = 0.7,
-                     shift: int | float = 0) -> tuple[NDArray, NDArray]:
+                     shift: Union[int, float] = 0) -> Tuple[NDArray, NDArray]:
     assert time_series.ndim == 2, "Time series expected, each datapoint is a 1D array"
     assert 0 < train_test_ratio < 1, "train_test_ratio should be within (0, 1) interval"
 
@@ -45,7 +45,7 @@ def chop_time_series_into_chunks(time_series: NDArray,
 
 
 def split_chunks_into_windows_and_targets(chunks: NDArray,
-                                          target_len: int = 1) -> tuple[NDArray, NDArray]:
+                                          target_len: int = 1) -> Tuple[NDArray, NDArray]:
     assert chunks.ndim == 3, "Shape should be (n_chunks, chunk_len, datapoint_dim)"
 
     chunk_len: int = chunks.shape[1]
@@ -76,7 +76,7 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
         self.targets = torch.from_numpy(targets).to(torch.float32)
         self.n_points: int = len(windows)
 
-    def __getitem__(self, index: int) -> tuple:
+    def __getitem__(self, index: int) -> Tuple:
         return (self.windows[index], self.targets[index])
 
     def __len__(self) -> int:
@@ -145,8 +145,8 @@ def prepare_time_series_for_learning(train_ts: NDArray,
 
 
 def test_train_test_split():
-    def compare(actual: tuple[NDArray, NDArray],
-                expected: tuple[NDArray, NDArray]) -> None:
+    def compare(actual: Tuple[NDArray, NDArray],
+                expected: Tuple[NDArray, NDArray]) -> None:
         assert len(actual) == len(expected) == 2
         assert np.array_equal(actual[0], expected[0]), f"{actual} \n\t!=\n{expected}"
         assert np.array_equal(actual[1], expected[1]), f"{actual} \n\t!=\n{expected}"
@@ -215,8 +215,8 @@ def test_chop_time_series_into_chunks() -> None:
 
 
 def test_split_chunks_into_windows_and_targets() -> None:
-    def compare(actual: tuple[NDArray, NDArray],
-                expected: tuple[NDArray, NDArray]) -> None:
+    def compare(actual: Tuple[NDArray, NDArray],
+                expected: Tuple[NDArray, NDArray]) -> None:
         assert len(actual) == len(expected) == 2
         assert np.array_equal(actual[0], expected[0]), f"{actual} \n\t!=\n{expected}"
         assert np.array_equal(actual[1], expected[1]), f"{actual} \n\t!=\n{expected}"

@@ -10,6 +10,7 @@ from datasets import chop_time_series_into_chunks, split_chunks_into_windows_and
 # https://www.blog.trainindata.com/mutual-information-with-python/
 from sklearn.feature_selection import mutual_info_regression
 
+from typing import Tuple
 import numpy as np
 import numpy.typing
 NDArray = numpy.typing.NDArray[np.floating]
@@ -18,7 +19,7 @@ NDArray = numpy.typing.NDArray[np.floating]
 def time_series_2_windows_and_targets(time_series: NDArray,
                                       window_len: int = 30,
                                       target_len: int = 1,
-                                      reverse: bool = False) -> tuple[NDArray, NDArray]:
+                                      reverse: bool = False) -> Tuple[NDArray, NDArray]:
     chunks = chop_time_series_into_chunks(time_series,
                                           chunk_len=window_len+target_len,
                                           reverse=reverse,
@@ -27,7 +28,7 @@ def time_series_2_windows_and_targets(time_series: NDArray,
     return windows, targets
 
 
-def calculate_mutual_info_for_dataset(ts: NDArray, dim: int = 0) -> tuple[NDArray, NDArray]:
+def calculate_mutual_info_for_dataset(ts: NDArray, dim: int = 0) -> Tuple[NDArray, NDArray]:
     assert 0 <= dim < ts.shape[1]
 
     forward_windows, forward_targets = time_series_2_windows_and_targets(ts)

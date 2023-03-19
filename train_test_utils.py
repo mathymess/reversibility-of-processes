@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.utils.tensorboard as tb
 
-from typing import Callable
+from typing import Callable, List
 
 
 def get_mean_loss_on_test_dataset(model: ThreeFullyConnectedLayers,
@@ -24,14 +24,14 @@ class EpochlyCallback():
                  tensorboard_scalar_name: str = "mean_loss_on_train"):
         self.writer = tb.SummaryWriter(log_dir=tensorboard_log_dir)
         self.scalar_name = tensorboard_scalar_name
-        self.all_values: list[float] = []
+        self.all_values: List[float] = []
 
     def __call__(self, scalar_value: float) -> None:
         self.writer.add_scalar(self.scalar_name, scalar_value, len(self.all_values))
         self.all_values.append(scalar_value)
         self.writer.close()
 
-    def get_values(self) -> list[float]:
+    def get_values(self) -> List[float]:
         return self.all_values
 
 
