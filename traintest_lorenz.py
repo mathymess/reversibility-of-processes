@@ -1,11 +1,9 @@
 from generate_time_series import load_lorenz_attractor_time_series
 from datasets import AllDataHolder, prepare_time_series_for_learning
 from models import ThreeFullyConnectedLayers
+from train_test_utils import EpochlyCallback, train_loop_adam_with_scheduler
 
-from train_test_utils import EpochlyCallback, train_loop_adam, train_loop_rmsprop
-from train_test_utils import train_loop_adam_with_scheduler, train_loop_rmsprop_with_scheduler
-
-from typing import Callable
+from typing import Callable, Iterable
 
 
 def load_lorenz_attractor_dataholder(window_len: int,
@@ -20,11 +18,11 @@ def load_lorenz_attractor_dataholder(window_len: int,
     return dh
 
 
-def train_test_lorenz(train_loop: Callable,
-                      window_len: int = 30,
-                      target_len: int = 1,
-                      hidden_layer1_size: int = 16,
-                      hidden_layer2_size: int = 16,
+def train_test_lorenz(window_len: int,
+                      target_len: int,
+                      train_loop: Callable = train_loop_adam_with_scheduler,
+                      hidden_layer1_size: int = 13,
+                      hidden_layer2_size: int = 13,
                       num_epochs: int = 50,
                       tensorboard_scalar_name: str = "mean_loss_on_test") -> None:
     dh = load_lorenz_attractor_dataholder(window_len=window_len, target_len=target_len)
@@ -35,7 +33,7 @@ def train_test_lorenz(train_loop: Callable,
                                               datapoint_size=3,
                                               hidden_layer1_size=hidden_layer1_size,
                                               hidden_layer2_size=hidden_layer2_size)
-    forward_callback = EpochlyCallback(tensorboard_log_dir="runs/20230320_lorenz/forward/",
+    forward_callback = EpochlyCallback(tensorboard_log_dir="runs/20230320_lorenz_window/forward/",
                                        tensorboard_scalar_name=tensorboard_scalar_name)
     train_loop(forward_model,
                dh.forward.train_loader,
@@ -49,7 +47,7 @@ def train_test_lorenz(train_loop: Callable,
                                                datapoint_size=3,
                                                hidden_layer1_size=hidden_layer1_size,
                                                hidden_layer2_size=hidden_layer2_size)
-    backward_callback = EpochlyCallback(tensorboard_log_dir="runs/20230320_lorenz/backward/",
+    backward_callback = EpochlyCallback(tensorboard_log_dir="runs/20230320_lorenz_window/backward/",
                                         tensorboard_scalar_name=tensorboard_scalar_name)
     train_loop(backward_model,
                dh.backward.train_loader,
@@ -59,22 +57,20 @@ def train_test_lorenz(train_loop: Callable,
 
 
 if __name__ == "__main__":
-    for attempt in range(10):
-        scalar_name = f"adam/attempt{attempt}"
-        train_test_lorenz(train_loop_adam,
-                          tensorboard_scalar_name=scalar_name)
+    def get_target_len_mesh(window_len: int) -> Iterable[int]:
+        return range(1, window_len, max(window_len // 5, 1))
+        # # Alternatively, a much finer mesh:
+        # range1 = range(1, min(3, window_len) + 1)
+        # range2 = range(5, min(30, window_len) + 1, 4)
+        # range3 = range(35, min(75, window_len) + 1, 10)
+        # range4 = range(80, min(130, window_len) + 1, 20)
+        # big_range = {int(window_len * 1.4), window_len * 2}
+        # return sorted(set(itertools.chain(range1, range2, range3, range4, big_range)))
 
-    for attempt in range(10):
-        scalar_name = f"rmsprop/attempt{attempt}"
-        train_test_lorenz(train_loop_rmsprop,
-                          tensorboard_scalar_name=scalar_name)
-
-    for attempt in range(10):
-        scalar_name = f"adam_with_scheduler/attempt{attempt}"
-        train_test_lorenz(train_loop_adam_with_scheduler,
-                          tensorboard_scalar_name=scalar_name)
-
-    for attempt in range(10):
-        scalar_name = f"rmsprop_with_scheduler/attempt{attempt}"
-        train_test_lorenz(train_loop_rmsprop_with_scheduler,
-                          tensorboard_scalar_name=scalar_name)
+    for window_len in range(1, 121, 5):
+        for target_len in get_target_len_mesh(window_len):
+            for attempt in "abc":
+                scalar_name = f"window={window_len}/target={target_len}_{attempt}"
+                train_test_lorenz(window_len=window_len,
+                                  target_len=target_len,
+                                  tensorboard_scalar_name=scalar_name)

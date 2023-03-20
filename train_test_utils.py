@@ -142,6 +142,3 @@ def train_loop_rmsprop_with_scheduler(model: nn.Module,
         scheduler.step()
 
     model.eval()
-
-
-train_loop = train_loop_adam
