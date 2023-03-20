@@ -11,7 +11,17 @@ In this project we use primitive ML to test the following hypothesis: if the pro
 
 ## Tensorboard history
 
-### 3, 20230320, git tag `tensorboard3`
+### 3.1, 20230320, git tag `tensorboard3.1`
+
+Same as `tensorboard3`, except
+- added 4th optimizer into comparison: `torch.optim.RMSprop` + `torch.optim.lr_scheduler.ExponentialLR(gamma=0.95)` 
+- changed `hidden_layer_size` from 10 to 16.
+
+Other parameters remain `window_len=30`, `target_len=1`.
+
+- [Lorenz](https://tensorboard.dev/experiment/135AOEnBQDeraFPTwzFXQw/)
+
+### 3, 20230319, git tag `tensorboard3`
 
 I compare three different optimizers, all with default parameters:
 1. `torch.optim.Adam` (was used in all runs before)
@@ -24,11 +34,11 @@ Other parameters are fixed: `window_len=30`, `hidden_layer1_size=hidden_layer2_s
 
 ### 2, 20230313, git tag `tensorboard2`
 
-Test dataset is the same as train to avoid randomization and sampling bias observed in `tensorboard2`.
+Test dataset is the same as train to avoid randomization and sampling bias observed in `tensorboard1.1`.
 For each system, there are ~50 learning curves with hidden_layer_size going from 1 to 20.
 This corresponds to the total number of parameters in `ThreeFullyConnectedLayers` ranging from ~0.1k to ~2k.
 I rerun the same learning process 3 times, each labeled by one of the letters `a,b,c` to make up for some randomness due to randomized batching in `torch.utils.data.DataLoader` and initial weights.
-An observation: for small hidden_layer_size, loss usually stops at value > 10, implying the model doesn't learn.
+An observation: for small `hidden_layer_size`, loss usually stops at value > 10, implying the model doesn't learn.
 
 - [Kepler](https://tensorboard.dev/experiment/lQ62rBh6TDG9cDSg0s8lDQ/)
 - [Belousov-Zhabotinsky](https://tensorboard.dev/experiment/UmfOElNZRRqdd3kt9LbzKg/)
