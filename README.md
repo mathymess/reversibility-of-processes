@@ -11,7 +11,18 @@ In this project we use primitive ML to test the following hypothesis: if the pro
 
 ## Tensorboard history
 
-### 2, 20230313, git tag `tensorboard3`
+### 3, 20230320, git tag `tensorboard3`
+
+I compare three different optimizers, all with default parameters:
+1. `torch.optim.Adam` (was used in all runs before)
+2. `torch.optim.RMSprop` (turned out to be too noisy)
+3. `torch.optim.Adam` + `torch.optim.lr_scheduler.ExponentialLR(gamma=0.95)` (maybe optimal, maybe too smooth)
+
+Other parameters are fixed: `window_len=30`, `hidden_layer1_size=hidden_layer2_size=10`, `target_len=1`.
+
+- [Lorenz](https://tensorboard.dev/experiment/V00WLnJQTMKrnZR76JkRKg/)
+
+### 2, 20230313, git tag `tensorboard2`
 
 Test dataset is the same as train to avoid randomization and sampling bias observed in `tensorboard2`.
 For each system, there are ~50 learning curves with hidden_layer_size going from 1 to 20.
@@ -23,7 +34,7 @@ An observation: for small hidden_layer_size, loss usually stops at value > 10, i
 - [Belousov-Zhabotinsky](https://tensorboard.dev/experiment/UmfOElNZRRqdd3kt9LbzKg/)
 - [Lorenz](https://tensorboard.dev/experiment/NNyGP2F0T3KHZbvurDLvsw/)
 
-### 1.1, 20230312, git tag `tensorboard2`
+### 1.1, 20230312, git tag `tensorboard1.1`
 
 Redo the exact same plots with few minor fixes.
 
