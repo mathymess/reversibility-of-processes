@@ -11,6 +11,16 @@ In this project we use primitive ML to test the following hypothesis: if the pro
 
 ## Tensorboard history
 
+### 4, 20230320, git tag `tensorboard4`
+
+Vary `window_len` and `target_len` at `hidden_layer_size=13` with (`torch.optim.Adam` + `torch.optim.lr_scheduler.ExponentialLR(gamma=0.95)`).
+
+- [Lorenz](https://tensorboard.dev/experiment/9mmpTyOXQ1Gf4k03dadWZg/)
+
+Problems:
+- for big `target_len`, the model is underfitted. This happens because the exponential LR dies out too fast.
+- it would be better to vary `window_len` and `target_len` and keep their sum (proportional to the totaal amount of parameters in the model) constant.
+
 ### 3.1, 20230320, git tag `tensorboard3.1`
 
 Same as `tensorboard3`, except
