@@ -3,7 +3,7 @@
 Time irreversibility is a fundamental concept in physics, and the analysis of this property can provide insights into the underlying physical laws that govern the universe.
 However, the study of time irreversibility is often limited to mathematical models and computational simulations, and it can be challenging to gain a deeper understanding of the underlying principles.
 In this project, we aim to analyze time irreversibility through the lens of neural networks.
-The approach would be to compare the performance of the predictive models in both time directions for various physical systems, including Kepler orbital motion, Lorenz attractors and Belousov-Zhanotinsky reaction.
+The approach would be to compare the performance of the predictive models in both time directions for various physical systems, including Kepler orbital motion, Lorenz attractors and Belousov-Zhabotinsky reaction.
 The difference in performance or architecture giving similar performance should indicate the symmetry in the physics laws.
 
 Predicting the trajectory of a dynamical system can be thought of as a time series problem: knowing the position at moments $t_{1}, \ldots, t_{n-1}$, predict the position at time $t_n$.
@@ -19,7 +19,7 @@ Vary `window_len` and `target_len` at `hidden_layer_size=13` with (`torch.optim.
 
 Problems:
 - for big `target_len`, the model is underfitted. This happens because the exponential LR dies out too fast.
-- it would be better to vary `window_len` and `target_len` and keep their sum (proportional to the totaal amount of parameters in the model) constant.
+- it would be better to vary `window_len` and `target_len` and keep their sum (proportional to the total amount of parameters in the model) constant.
 
 ### 3.1, 20230320, git tag `tensorboard3.1`
 
