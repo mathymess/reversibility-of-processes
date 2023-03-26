@@ -13,7 +13,7 @@ In this project we use primitive ML to test the following hypothesis: if the pro
 
 ### 2.1, 20230326, git branch `tensorboard2.1`
 
-Rerun `tesnorboard2` on Belousov-Zhabotinsky after I changed the dataset so that it only includes the first period of the periodic motion.
+Rerun `tensorboard2` on Belousov-Zhabotinsky after I changed the dataset so that it only includes the first period of the periodic motion.
 It used to include about 20 identical periods, and I thought it was wrong.
 
 - [Belousov-Zhabotinsky](https://tensorboard.dev/experiment/E4jbjQP4Tdak7MbvEXWyyg/)
@@ -32,9 +32,19 @@ Vary `window_len` and `target_len` at `hidden_layer_size=13` with (`torch.optim.
 
 - [Lorenz](https://tensorboard.dev/experiment/9mmpTyOXQ1Gf4k03dadWZg/)
 
-Problems:
-- for big `target_len`, the model is underfitted. This happens because the exponential LR dies out too fast.
-- it would be better to vary `window_len` and `target_len` and keep their sum (proportional to the total amount of parameters in the model) constant.
+Observations:
+- Too many pictures, hard to make conclusions + computation takes too long.
+- `backward` has greater loss that `forward`, but often insignificantly. Need a closer look with fewer pictures.
+- It might be better to vary `window_len` and `target_len` and keep their sum (proportional to the total amount of parameters in the model) constant.
+- The bigger `target_len` is, the greater the typical loss values are.
+I average the loss over the train dataset, but not over each target point.
+- For `window_len>36` and `target_len > 0.6*window_len`, loss goes, very roughly speaking, from 90 down to 30.
+Probably underfitting, probably due to `ExponentialLR` dying out too fast.
+- Consider `window_len=76`, `target_len=31`.
+This amounts to `chunk_len=107`, which is 1% of the 10000 points in the original time series.
+If you look at the plot in `dataset_review.ipynb`, this is a huge `chunk_len`.
+If you look in `model_review.ipynb`, with `size=13` the total number of trainable parameters in the model is about 4.5k, half the training dataset size.
+This is to say, I should've stopped at `window_len=30`.
 
 ### 3.1, 20230320, git tag `tensorboard3.1`
 
@@ -45,6 +55,10 @@ Same as `tensorboard3`, except
 Other parameters remain `window_len=30`, `target_len=1`.
 
 - [Lorenz](https://tensorboard.dev/experiment/135AOEnBQDeraFPTwzFXQw/)
+    - `Adam` is a bit noisy
+    - `Adam+ExponentialLR` is very smooth, increase `gamma=0.95` to make it less smooth ($0.95^{n_epoch=50} \approx 0.07$)
+    - `RMSprop` -- model doesn't learn, too noisy
+    - `RMSprop+ExponentialLR` roughly same as Adam, a bit noisy
 
 ### 3, 20230319, git tag `tensorboard3`
 
@@ -66,24 +80,34 @@ I rerun the same learning process 3 times, each labeled by one of the letters `a
 An observation: for small `hidden_layer_size`, loss usually stops at value > 10, implying the model doesn't learn.
 
 - [Kepler](https://tensorboard.dev/experiment/lQ62rBh6TDG9cDSg0s8lDQ/)
-- [Belousov-Zhabotinsky](https://tensorboard.dev/experiment/UmfOElNZRRqdd3kt9LbzKg/)
+    - size 1-4: weird stuff, too few params
+    - size 10-20: best fit after 5-10 epochs, crazy noise with 1e-2 loss afterwards
+    - size 5-9: a bit noisy, something in between.
+    - no clear winner `forward` vs `backward`
 - [Lorenz](https://tensorboard.dev/experiment/NNyGP2F0T3KHZbvurDLvsw/)
+    - size 1-4: weird stuff, too few params
+    - size 5-8: very smooth
+    - size 5-20: `backward` has greater loss about 80% of the time.
+- [Belousov-Zhabotinsky](https://tensorboard.dev/experiment/UmfOElNZRRqdd3kt9LbzKg/)
+    - size 1-3: weird stuff, too few params
+    - size 6-20: noisy, but `backward` is strictly greater than `forward`, and also much noisier
 
 ### 1.1, 20230312, git tag `tensorboard1.1`
 
 Redo the exact same plots with few minor fixes.
 
 - [Kepler](https://tensorboard.dev/experiment/NmioEasRR023gljiQKdsyQ/)
-- [Belousov-Zhabotinsky](https://tensorboard.dev/experiment/LyNtPio7TdSri93mRq1l3g/)
 - [Lorenz](https://tensorboard.dev/experiment/jbwsyZyPT6iBbJPfB3QEdw/)
+- [Belousov-Zhabotinsky](https://tensorboard.dev/experiment/LyNtPio7TdSri93mRq1l3g/)
 
 ### 1, 20230306, git tag `tensorboard1`
 
-- [Kepler](https://tensorboard.dev/experiment/MOjL9KUlR0ik1Dvr4au7CQ/)
-- [Belousov-Zhabotinsky](https://tensorboard.dev/experiment/T8aXeU7DSRClvkvARzdjkg/)
-- [Lorenz](https://tensorboard.dev/experiment/jAuEyWfpQCWJgxiwlZnBqg/)
-
 For each of three physical systems, I vary (1) the hidden layer size at fixed `window_len` and (2) `window_len` and `shift_ratio` at fixed hidden layer size.
 `shift_ratio` defines which part of the periodic trajectory we consider to be the test and which to be the train data.
+
+- [Kepler](https://tensorboard.dev/experiment/MOjL9KUlR0ik1Dvr4au7CQ/)
+- [Lorenz](https://tensorboard.dev/experiment/jAuEyWfpQCWJgxiwlZnBqg/)
+- [Belousov-Zhabotinsky](https://tensorboard.dev/experiment/T8aXeU7DSRClvkvARzdjkg/)
+
 The somewhat chaotic results for (2) show that `shift_ratio` is important.
 If you reveal only a region of the periodic orbit for training, the remaining [test] region might be qualitatively different from the training one, and it's unreasonable to expect that the model will make accurate predictions about the hidden part of the orbit.
