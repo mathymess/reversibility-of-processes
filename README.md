@@ -11,6 +11,21 @@ In this project we use primitive ML to test the following hypothesis: if the pro
 
 ## Tensorboard history
 
+### 2.1, 20230326, git branch `tensorboard2.1`
+
+Rerun `tesnorboard2` on Belousov-Zhabotinsky after I changed the dataset so that it only includes the first period of the periodic motion.
+It used to include about 20 identical periods, and I thought it was wrong.
+
+- [Belousov-Zhabotinsky](https://tensorboard.dev/experiment/E4jbjQP4Tdak7MbvEXWyyg/)
+
+Observations:
+- For some reason, learning curves are much smoother than for `tensorboard2`. It would be pointless to add a scheduler `ExponentialLR`.
+- For `hidden_layer_size` equal to 1 or 5, weird things happen, so I assume model needs more parameters to learn.
+- For `hidden_layer_size` equal to 9,13,17 `forward` quickly reaches 1e-3 loss, while `backward`'s loss increases and then falls back (why?).
+- `backward` has reliably greater loss than `forward` -- the process is "irreversible"
+
+It is unobvious whether or not shrinking the dataset to 1 period was a good idea.
+
 ### 4, 20230320, git tag `tensorboard4`
 
 Vary `window_len` and `target_len` at `hidden_layer_size=13` with (`torch.optim.Adam` + `torch.optim.lr_scheduler.ExponentialLR(gamma=0.95)`).
