@@ -30,7 +30,7 @@ def train_test_belousov_zhabotinsky(window_len: int = 50,
                                               hidden_layer1_size=hidden_layer1_size,
                                               hidden_layer2_size=hidden_layer2_size)
     forward_callback = EpochlyCallback(
-            tensorboard_log_dir="runs/20230313_belousov_zhabotinsky/forward/",
+            tensorboard_log_dir="runs/20230326_belousov_zhabotinsky/forward/",
             tensorboard_scalar_name=tensorboard_scalar_name)
     train_loop(forward_model,
                dh.forward.train_loader,
@@ -45,7 +45,7 @@ def train_test_belousov_zhabotinsky(window_len: int = 50,
                                                hidden_layer1_size=hidden_layer1_size,
                                                hidden_layer2_size=hidden_layer2_size)
     backward_callback = EpochlyCallback(
-            tensorboard_log_dir="runs/20230313_belousov_zhabotinsky/backward/",
+            tensorboard_log_dir="runs/20230326_belousov_zhabotinsky/backward/",
             tensorboard_scalar_name=tensorboard_scalar_name)
     train_loop(backward_model,
                dh.backward.train_loader,
@@ -55,7 +55,7 @@ def train_test_belousov_zhabotinsky(window_len: int = 50,
 
 
 if __name__ == "__main__":
-    for size in range(1, 20):
+    for size in range(1, 20, 4):
         for attempt in "abc":
             scalar_name = f"hidden_layer_size/{size}{attempt}"
             train_test_belousov_zhabotinsky(window_len=30,
