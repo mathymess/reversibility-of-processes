@@ -56,7 +56,7 @@ Other parameters remain `window_len=30`, `target_len=1`.
 
 - [Lorenz](https://tensorboard.dev/experiment/135AOEnBQDeraFPTwzFXQw/)
     - `Adam` is a bit noisy
-    - `Adam+ExponentialLR` is very smooth, increase `gamma=0.95` to make it less smooth ($0.95^{n_epoch=50} \approx 0.07$)
+    - `Adam+ExponentialLR` is very smooth, increase `gamma=0.95` to make it less smooth ($0.95^{n_{\text{epoch}}=50} \approx 0.07$)
     - `RMSprop` -- model doesn't learn, too noisy
     - `RMSprop+ExponentialLR` roughly same as Adam, a bit noisy
 
