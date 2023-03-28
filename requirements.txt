@@ -12,3 +12,5 @@ tensorboard
 # ipywidgets
 # pyqt5  # to use %matplotlib qt magic
 # # IPythonClipboard
+
+tqdm

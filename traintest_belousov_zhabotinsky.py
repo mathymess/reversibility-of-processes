@@ -1,4 +1,4 @@
-from generate_time_series import load_lorenz_attractor_time_series
+from generate_time_series import load_belousov_zhabotinsky_time_series
 from datasets import AllDataHolder, prepare_time_series_for_learning
 from models import ThreeFullyConnectedLayers
 from train_test_utils import EpochlyCallback, train_loop_adam_with_scheduler
@@ -7,26 +7,25 @@ from typing import Callable
 from tqdm import tqdm
 
 
-def load_lorenz_attractor_dataholder(window_len: int,
-                                     target_len: int) -> AllDataHolder:
-    lrz = load_lorenz_attractor_time_series()
-    # Use the same data for train and test.
-    dh = prepare_time_series_for_learning(train_ts=lrz,
-                                          test_ts=lrz.copy(),
+def load_belousov_zhabotinsky_dataholder(window_len: int,
+                                         target_len: int) -> AllDataHolder:
+    bzh = load_belousov_zhabotinsky_time_series()
+    dh = prepare_time_series_for_learning(train_ts=bzh,
+                                          test_ts=bzh.copy(),
                                           window_len=window_len,
                                           target_len=target_len,
                                           take_each_nth_chunk=1)
     return dh
 
 
-def train_test_lorenz(window_len: int,
-                      target_len: int,
-                      train_loop: Callable = train_loop_adam_with_scheduler,
-                      hidden_layer1_size: int = 13,
-                      hidden_layer2_size: int = 13,
-                      num_epochs: int = 50,
-                      tensorboard_scalar_name: str = "mean_loss_on_test") -> None:
-    dh = load_lorenz_attractor_dataholder(window_len=window_len, target_len=target_len)
+def train_test_belousov_zhabotinsky(window_len: int,
+                                    target_len: int,
+                                    train_loop: Callable = train_loop_adam_with_scheduler,
+                                    hidden_layer1_size: int = 13,
+                                    hidden_layer2_size: int = 13,
+                                    num_epochs: int = 50,
+                                    tensorboard_scalar_name: str = "mean_loss_on_test") -> None:
+    dh = load_belousov_zhabotinsky_dataholder(window_len=window_len, target_len=target_len)
 
     # Forward
     forward_model = ThreeFullyConnectedLayers(window_len=window_len,
@@ -34,8 +33,9 @@ def train_test_lorenz(window_len: int,
                                               datapoint_size=3,
                                               hidden_layer1_size=hidden_layer1_size,
                                               hidden_layer2_size=hidden_layer2_size)
-    forward_callback = EpochlyCallback(tensorboard_log_dir="runs/20230328_lorenz/forward/",
-                                       tensorboard_scalar_name=tensorboard_scalar_name)
+    forward_callback = EpochlyCallback(
+            tensorboard_log_dir="runs/20230328_belousov_zhabotinsky/forward/",
+            tensorboard_scalar_name=tensorboard_scalar_name)
     train_loop(forward_model,
                dh.forward.train_loader,
                dh.forward.test_dataset,
@@ -48,8 +48,9 @@ def train_test_lorenz(window_len: int,
                                                datapoint_size=3,
                                                hidden_layer1_size=hidden_layer1_size,
                                                hidden_layer2_size=hidden_layer2_size)
-    backward_callback = EpochlyCallback(tensorboard_log_dir="runs/20230328_lorenz/backward/",
-                                        tensorboard_scalar_name=tensorboard_scalar_name)
+    backward_callback = EpochlyCallback(
+            tensorboard_log_dir="runs/20230328_belousov_zhabotinsky/backward/",
+            tensorboard_scalar_name=tensorboard_scalar_name)
     train_loop(backward_model,
                dh.backward.train_loader,
                dh.backward.test_dataset,
@@ -68,6 +69,6 @@ if __name__ == "__main__":
     for window_len, target_len in tqdm(grid):
         for attempt in "abcd":
             scalar_name = f"chunk_len={window_len+target_len}/{window_len}+{target_len}_{attempt}"
-            train_test_lorenz(window_len=window_len,
-                              target_len=target_len,
-                              tensorboard_scalar_name=scalar_name)
+            train_test_belousov_zhabotinsky(window_len=window_len,
+                                            target_len=target_len,
+                                            tensorboard_scalar_name=scalar_name)
