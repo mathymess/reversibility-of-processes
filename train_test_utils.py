@@ -13,10 +13,13 @@ CallbackType = Callable[[float], None]
 def get_mean_loss_on_test_dataset(model: ThreeFullyConnectedLayers,
                                   test_dataset: torch.utils.data.Dataset,
                                   loss_fn: Callable[..., float] = nn.MSELoss()) -> float:
+    model.eval()
     losses = np.zeros(len(test_dataset))
     with torch.no_grad():
         for i, (window, target) in enumerate(test_dataset):
             losses[i] = loss_fn(model(window), target)
+
+        model.train()
         return losses.mean()
 
 
@@ -48,7 +51,10 @@ def train_loop_adam(model: nn.Module,
     loss_fn = nn.MSELoss()
     optim = torch.optim.Adam(model.parameters())
 
+    model.eval()
+    epochly_callback(get_mean_loss_on_test_dataset(model, test_dataset))
     model.train()
+
     for epoch in range(num_epochs):
         for i, (windows, targets) in enumerate(dataloader):
             optim.zero_grad()
@@ -59,8 +65,9 @@ def train_loop_adam(model: nn.Module,
 
             optim.step()
 
-        mean_test_loss = get_mean_loss_on_test_dataset(model, test_dataset)
-        epochly_callback(mean_test_loss)
+        model.eval()
+        epochly_callback(get_mean_loss_on_test_dataset(model, test_dataset))
+        model.train()
 
     model.eval()
 
@@ -74,7 +81,10 @@ def train_loop_adam_with_scheduler(model: nn.Module,
     optim = torch.optim.Adam(model.parameters())
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optim, gamma=0.95)
 
+    model.eval()
+    epochly_callback(get_mean_loss_on_test_dataset(model, test_dataset))
     model.train()
+
     for epoch in range(num_epochs):
         for i, (windows, targets) in enumerate(dataloader):
             optim.zero_grad()
@@ -85,8 +95,10 @@ def train_loop_adam_with_scheduler(model: nn.Module,
 
             optim.step()
 
-        mean_test_loss = get_mean_loss_on_test_dataset(model, test_dataset)
-        epochly_callback(mean_test_loss)
+        model.eval()
+        epochly_callback(get_mean_loss_on_test_dataset(model, test_dataset))
+        model.train()
+
         scheduler.step()
 
     model.eval()
@@ -100,7 +112,10 @@ def train_loop_rmsprop(model: nn.Module,
     loss_fn = nn.MSELoss()
     optim = torch.optim.RMSprop(model.parameters())
 
+    model.eval()
+    epochly_callback(get_mean_loss_on_test_dataset(model, test_dataset))
     model.train()
+
     for epoch in range(num_epochs):
         for i, (windows, targets) in enumerate(dataloader):
             optim.zero_grad()
@@ -111,8 +126,9 @@ def train_loop_rmsprop(model: nn.Module,
 
             optim.step()
 
-        mean_test_loss = get_mean_loss_on_test_dataset(model, test_dataset)
-        epochly_callback(mean_test_loss)
+        model.eval()
+        epochly_callback(get_mean_loss_on_test_dataset(model, test_dataset))
+        model.train()
 
     model.eval()
 
@@ -126,7 +142,10 @@ def train_loop_rmsprop_with_scheduler(model: nn.Module,
     optim = torch.optim.RMSprop(model.parameters())
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optim, gamma=0.95)
 
+    model.eval()
+    epochly_callback(get_mean_loss_on_test_dataset(model, test_dataset))
     model.train()
+
     for epoch in range(num_epochs):
         for i, (windows, targets) in enumerate(dataloader):
             optim.zero_grad()
@@ -137,8 +156,10 @@ def train_loop_rmsprop_with_scheduler(model: nn.Module,
 
             optim.step()
 
-        mean_test_loss = get_mean_loss_on_test_dataset(model, test_dataset)
-        epochly_callback(mean_test_loss)
+        model.eval()
+        epochly_callback(get_mean_loss_on_test_dataset(model, test_dataset))
+        model.train()
+
         scheduler.step()
 
     model.eval()
