@@ -11,6 +11,29 @@ In this project we use primitive ML to test the following hypothesis: if the pro
 
 ## Tensorboard history
 
+### 4.2, 20230328, git tag `tensorboard4.2`
+
+Rerun `tensorboard4.1` on Kepler with `hidden_layer_size` =10 instead of 5.
+- [Kepler](https://tensorboard.dev/experiment/lrZZRKRVRk2VKYRIA5hvqg/)
+    - Now that there are way more params, the model probably overfits, getting to 1e-4 loss, but no weird underfitting as with `hidden_layer_size=5`.
+    - No clear winner `forward` vs `backward`, as expected
+
+### 4.1, 20230328, git tag `tensorboard4.1`
+
+As in `tensorboard4`, vary `window_len` and `target_len` with `hidden_layer_size` fixed.
+Pecularities:
+- `chunk_len=window_len+target_len` is kept constant to see how `window_len` affects prediction without changing the total number of trainable parameters in the model (proportional to `chunk_len`).
+- Optimizer is still `Adam+ExponentialLR` but changed `gamma` from 0.95 to 0.96 ($0.96^{n_{\text{epoch}}=50} \approx 0.13$ vs $0.95^{n_{\text{epoch}}=50} \approx 0.08$).
+- The grid is much sparser (so it's easier to grasp) and now it's hardcoded.
+
+Tensorboards:
+- [Kepler](https://tensorboard.dev/experiment/ck9wyrkVQ1mlZ1f2Xon3Hg/)
+    - For Lorenz and Belousov-Zhabotinsky `hidden_layer_size=13` and for `Kepler` I used `hidden_layer_size=5`.
+    - There are several weird curves that stay at 0.4 after epoch 5, probably need more params.
+- [Lorenz](https://tensorboard.dev/experiment/33WgkM1ATly1AKRHkDwi8Q/)
+- [Belousov-Zhabotinsky](https://tensorboard.dev/experiment/UkEjV8U8RLaAYadwGnvqDw/)
+    - all learning curves are almost identical: abrupt loss drop after the first epoch, then `forward` slowly and steadily wins, which you can better see in the log scale
+
 ### 2.1, 20230326, git branch `tensorboard2.1`
 
 Rerun `tensorboard2` on Belousov-Zhabotinsky after I changed the dataset so that it only includes the first period of the periodic motion.

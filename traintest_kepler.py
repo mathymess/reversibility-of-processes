@@ -22,8 +22,8 @@ def load_two_body_problem_dataholder(window_len: int,
 def train_test_kepler(window_len: int,
                       target_len: int,
                       train_loop: Callable = train_loop_adam_with_scheduler,
-                      hidden_layer1_size: int = 5,  # Look at tensorboard2, size=5 is optimal
-                      hidden_layer2_size: int = 5,
+                      hidden_layer1_size: int = 10,  # Look at tensorboard2, size=5 is optimal
+                      hidden_layer2_size: int = 10,
                       num_epochs: int = 50,
                       tensorboard_scalar_name: str = "mean_loss_on_test") -> None:
     dh = load_two_body_problem_dataholder(window_len=window_len, target_len=target_len)
@@ -35,7 +35,7 @@ def train_test_kepler(window_len: int,
                                               hidden_layer1_size=hidden_layer1_size,
                                               hidden_layer2_size=hidden_layer2_size)
     forward_callback = EpochlyCallback(
-        tensorboard_log_dir="runs/20230328_kepler/forward/",
+        tensorboard_log_dir="runs/20230328_kepler_10/forward/",
         tensorboard_scalar_name=tensorboard_scalar_name)
     train_loop(forward_model,
                dh.forward.train_loader,
@@ -50,7 +50,7 @@ def train_test_kepler(window_len: int,
                                                hidden_layer1_size=hidden_layer1_size,
                                                hidden_layer2_size=hidden_layer2_size)
     backward_callback = EpochlyCallback(
-        tensorboard_log_dir="runs/20230328_kepler/backward/",
+        tensorboard_log_dir="runs/20230328_kepler_10/backward/",
         tensorboard_scalar_name=tensorboard_scalar_name)
     train_loop(backward_model,
                dh.backward.train_loader,
