@@ -155,8 +155,8 @@ def load_belousov_zhabotinsky_time_series(
 def load_double_pendulum_time_series(coefs: Tuple[float, float, float, float] = (1., 1., 1., 1.),
                                      initial_conditions: NDArray = np.array(
                                          [3*np.pi/7, 3*np.pi/4, 1, 5]),
-                                     t_density: float = 15.,
-                                     t_duration: float = 600) -> NDArray:
+                                     t_density: float = 40,
+                                     t_duration: float = 250) -> NDArray:
     dbp = generate_time_series_for_system(functools.partial(double_pendulum_ode, coefs=coefs),
                                           initial_conditions=initial_conditions,
                                           t_density=t_density,

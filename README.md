@@ -11,6 +11,20 @@ In this project we use primitive ML to test the following hypothesis: if the pro
 
 ## Tensorboard history
 
+### 5, 20230428, git tag `tensorboard5`
+
+New system: double pendulum!
+It is chaotic, yet perfectly reversible, and our method must indicate that.
+Tried 2 different time series samplings:
+
+1. [double pendulum, 9k points with timestep=0.067, more sparce](https://tensorboard.dev/experiment/cZURcvUaQMap8izA7HaiBw/)
+2. [double pendulum, 10k points with timestep=0.025, more dense](https://tensorboard.dev/experiment/LNdqORYLRpCvdee5cnZFNQ/)
+
+All plots are very similar: starts at 4, reach ~1.7 by epoch 5 and reach ~1 at epoch 50.
+
+There's no qualitative difference between two sampling strategies.
+The data confirms the hypothesis that the double pendulum is reversible: `forward` and `backward` are identical.
+
 ### 4.2, 20230328, git tag `tensorboard4.2`
 
 Rerun `tensorboard4.1` on Kepler with `hidden_layer_size` =10 instead of 5.
