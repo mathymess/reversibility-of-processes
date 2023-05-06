@@ -34,7 +34,7 @@ def train_test_double_pendulum(window_len: int,
                                               hidden_layer1_size=hidden_layer1_size,
                                               hidden_layer2_size=hidden_layer2_size)
     forward_callback = EpochlyCallback(
-            tensorboard_log_dir="runs/20230428_double_pendulum/forward/",
+            tensorboard_log_dir="runs/202305_double_pendulum/forward/",
             tensorboard_scalar_name=tensorboard_scalar_name)
     train_loop(forward_model,
                dh.forward.train_loader,
@@ -49,7 +49,7 @@ def train_test_double_pendulum(window_len: int,
                                                hidden_layer1_size=hidden_layer1_size,
                                                hidden_layer2_size=hidden_layer2_size)
     backward_callback = EpochlyCallback(
-            tensorboard_log_dir="runs/20230428_double_pendulum/backward/",
+            tensorboard_log_dir="runs/202305_double_pendulum/backward/",
             tensorboard_scalar_name=tensorboard_scalar_name)
     train_loop(backward_model,
                dh.backward.train_loader,
@@ -60,7 +60,7 @@ def train_test_double_pendulum(window_len: int,
 
 if __name__ == "__main__":
     for window_len in (5, 12, 25):
-        for size in (10, 20):
+        for size in (30,):
             for attempt in "abcd":
                 scalar_name = f"window_len={window_len}|size={size}/{attempt}"
                 train_test_double_pendulum(window_len=window_len,

@@ -11,11 +11,21 @@ In this project we use primitive ML to test the following hypothesis: if the pro
 
 ## Tensorboard history
 
+### 5.1, 20230505, git tag `tensorboard5.1`
+
+Same as `tensorboard5`, but `hidden_layer_size=30` and 10k points with timestep=0.025.
+- [double pendulum](https://tensorboard.dev/experiment/L6U5spbYQjOpDdhkAXzjSA/)
+
+In `tensorboard5` the model is probably underfitted, since the loss doesn't improve much, so I tried increasing the model size.
+
+All plots are again similar: starts at 4, reach ~0.9 by epoch 1 and reach ~0.6 at epoch 50.
+No difference between `forward` and `backward`.
+
 ### 5, 20230428, git tag `tensorboard5`
 
 New system: double pendulum!
 It is chaotic, yet perfectly reversible, and our method must indicate that.
-Tried 2 different time series samplings:
+Tried 2 different time series samplings, with `hidden_layer_size` in (10,20) and `window_len` in (5,12,25).
 
 1. [double pendulum, 9k points with timestep=0.067, more sparce](https://tensorboard.dev/experiment/cZURcvUaQMap8izA7HaiBw/)
 2. [double pendulum, 10k points with timestep=0.025, more dense](https://tensorboard.dev/experiment/LNdqORYLRpCvdee5cnZFNQ/)
