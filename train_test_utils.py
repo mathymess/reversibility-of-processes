@@ -3,13 +3,14 @@ from datasets import TimeSeriesDataset, prepare_time_series_for_learning
 
 import functools
 import warnings
+import json
 import numpy as np
 
 import torch
 import torch.nn as nn
 import torch.utils.tensorboard as tb
 
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, List, Optional, Dict
 import numpy.typing
 CallbackType = Callable[[float], None]
 NDArray = numpy.typing.NDArray[np.floating]
@@ -44,6 +45,17 @@ class EpochlyCallback():
         return self.all_values
 
 
+class EpochlyCallbackBare():
+    def __init__(self):
+        self.all_values: List[float] = []
+
+    def __call__(self, scalar_value: float) -> None:
+        self.all_values.append(scalar_value)
+
+    def get_values(self) -> List[float]:
+        return self.all_values
+
+
 def train_loop_adam_with_scheduler(model: nn.Module,
                                    dataloader: torch.utils.data.DataLoader,
                                    test_dataset: TimeSeriesDataset,
@@ -53,13 +65,13 @@ def train_loop_adam_with_scheduler(model: nn.Module,
     optim = torch.optim.Adam(model.parameters())
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optim, gamma=0.96)
 
-    def epochly_callback_wrapped() -> None:
+    def epochly_callback_wrapped(m: nn.Module, d: TimeSeriesDataset) -> None:
         if epochly_callback is not None:
             model.eval()
-            epochly_callback(get_mean_loss_on_test_dataset(model, test_dataset))
+            epochly_callback(get_mean_loss_on_test_dataset(m, d))
             model.train()
 
-    epochly_callback_wrapped()
+    epochly_callback_wrapped(model, test_dataset)
     for epoch in range(num_epochs):
         for i, (windows, targets) in enumerate(dataloader):
             optim.zero_grad()
@@ -70,7 +82,7 @@ def train_loop_adam_with_scheduler(model: nn.Module,
 
             optim.step()
 
-        epochly_callback_wrapped()
+        epochly_callback_wrapped(model, test_dataset)
         scheduler.step()
 
     model.eval()
@@ -78,18 +90,17 @@ def train_loop_adam_with_scheduler(model: nn.Module,
 
 def train_test_distribution(time_series: NDArray,
                             window_len: int,
-                            target_len: int,
-                            hidden_size: int,
-                            train_loop: Callable = train_loop_adam_with_scheduler,
-                            num_epochs: int = 10,
+                            target_len: int = 1,
+                            hidden_size: int = 13,
+                            num_epochs: int = 50,
                             num_runs: int = 100,
-                            save_output_to_file: str = "") -> Tuple[List[float], List[float]]:
+                            save_output_to_file: str = "") -> Dict:
     dh = prepare_time_series_for_learning(train_ts=time_series,
                                           test_ts=time_series.copy(),
                                           window_len=window_len,
                                           target_len=target_len,
                                           take_each_nth_chunk=1)
-    train_loop = functools.partial(train_loop, num_epochs=num_epochs, epochly_callback=None)
+    train_loop = functools.partial(train_loop_adam_with_scheduler, num_epochs=num_epochs)
 
     def get_model() -> ThreeFullyConnectedLayers:
         return ThreeFullyConnectedLayers(window_len=window_len,
@@ -98,26 +109,29 @@ def train_test_distribution(time_series: NDArray,
                                          hidden_layer1_size=hidden_size,
                                          hidden_layer2_size=hidden_size)
 
-    def get_forward_loss():
-        forward_model = get_model()
-        train_loop(forward_model, dh.forward.train_loader, dh.forward.test_dataset)
-        return get_mean_loss_on_test_dataset(forward_model, dh.forward.test_dataset)
+    def get_forward_losses():
+        m = get_model()
+        callback = EpochlyCallbackBare()
+        train_loop(m, dh.forward.train_loader, dh.forward.test_dataset, epochly_callback=callback)
+        return callback.get_values()
 
-    def get_backward_loss():
-        backward_model = get_model()
-        train_loop(backward_model, dh.backward.train_loader, dh.backward.test_dataset)
-        return get_mean_loss_on_test_dataset(backward_model, dh.backward.test_dataset)
+    def get_backward_losses():
+        m = get_model()
+        callback = EpochlyCallbackBare()
+        train_loop(m, dh.backward.train_loader, dh.backward.test_dataset, epochly_callback=callback)
+        return callback.get_values()
 
     forward_losses, backward_losses = [], []
     for i in range(num_runs):
-        forward_losses.append(get_forward_loss())
-        backward_losses.append(get_backward_loss())
+        forward_losses.append(get_forward_losses())
+        backward_losses.append(get_backward_losses())
 
+    result = {"forward": forward_losses, "backward": backward_losses}
     if save_output_to_file != "":
         try:
             with open(save_output_to_file, "a") as file:
-                file.write(str((forward_losses, backward_losses)))
+                json.dump(result, file)
         except IOError as e:
             warnings.warn(f"Tried to write to '{save_output_to_file}' but could not. Error: {e}")
 
-    return forward_losses, backward_losses
+    return result

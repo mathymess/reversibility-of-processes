@@ -4,7 +4,7 @@ announce() {
 }
 
 announce "Mypy:"
-mypy --ignore-missing-imports *.py
+mypy --ignore-missing-imports --check-untyped-defs *.py
 
 announce "flakes8:"
 flake8 --show-source --max-line-length 100 *.py
