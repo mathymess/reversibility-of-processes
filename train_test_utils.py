@@ -1,6 +1,7 @@
 from models import ThreeFullyConnectedLayers
 from datasets import TimeSeriesDataset, prepare_time_series_for_learning
 
+import os
 import functools
 import warnings
 import json
@@ -129,6 +130,7 @@ def train_test_distribution(time_series: NDArray,
     result = {"forward": forward_losses, "backward": backward_losses}
     if save_output_to_file != "":
         try:
+            os.makedirs(os.path.dirname(save_output_to_file), exist_ok=True)
             with open(save_output_to_file, "a") as file:
                 json.dump(result, file)
         except IOError as e:
