@@ -13,10 +13,10 @@ if __name__ == "__main__":
     dt = 3e-2
 
     x1 = L1*np.sin(y[:, 0])
-    y1 = -L1*np.cos(y[:, 0])
+    y1 = L1*np.cos(y[:, 0])
 
     x2 = L2*np.sin(y[:, 1]) + x1
-    y2 = -L2*np.cos(y[:, 1]) + y1
+    y2 = L2*np.cos(y[:, 1]) + y1
 
     fig = plt.figure()
     ax = fig.add_subplot(111, autoscale_on=False, xlim=(-2, 2), ylim=(-2, 2))
