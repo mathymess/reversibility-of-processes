@@ -6,7 +6,7 @@ import matplotlib.animation as animation
 
 
 if __name__ == "__main__":
-    y = load_double_pendulum_time_series()
+    y = load_double_pendulum_time_series(friction=0.1)
     print(y.shape)
 
     L1, L2 = 1, 1

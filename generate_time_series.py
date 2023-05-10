@@ -74,12 +74,14 @@ def lorenz_attractor_ode(x: NDArray, _t: float,
     return x_dot
 
 
-def double_pendulum_ode(x: NDArray, _t: float, coefs: Tuple[float, ...]) -> NDArray:
+def double_pendulum_ode(x: NDArray, _t: float,
+                        coefs: Tuple[float, ...],
+                        friction: float) -> NDArray:
     # Code adopted from https://scipython.com/blog/the-double-pendulum/
-    g = 9.81  # The gravitational acceleration, in $ms^{-2}$.
+    g = -9.81  # The gravitational acceleration, in $ms^{-2}$.
     L1, L2, m1, m2 = coefs  # Pendulum lengths (in m) and masses (in kg).
 
-    # A double pendulum is descirbed by generalized coordinates $\theta_1$ and $\theta_2$.
+    # A double pendulum is described by generalized coordinates $\theta_1$ and $\theta_2$.
     # Denote their derivatives by $z_1$ and $z_2$ to reduce the ODE to the first order.
     theta1, theta2, z1, z2 = x
 
@@ -89,10 +91,10 @@ def double_pendulum_ode(x: NDArray, _t: float, coefs: Tuple[float, ...]) -> NDAr
     theta1dot = z1
     theta2dot = z2
 
-    z1dot = (m2*g*np.sin(theta2)*c - m2*s*(L1*z1**2*c + L2*z2**2) -
-             (m1+m2)*g*np.sin(theta1)) / L1 / (m1 + m2*s**2)
+    z1dot = (m2*g*np.sin(theta2)*c - m2*s*(L1*z1**2*c + L2*z2**2) - (m1+m2) *
+             g*np.sin(theta1)) / L1 / (m1 + m2*s**2)
     z2dot = ((m1+m2)*(L1*z1**2*s - g*np.sin(theta2) + g*np.sin(theta1)*c) +
-             m2*L2*z2**2*s*c) / L2 / (m1 + m2*s**2)
+             m2*L2*z2**2*s*c) / L2 / (m1 + m2*s**2) - theta2dot * friction / m1
 
     return np.array([theta1dot, theta2dot, z1dot, z2dot])
 
@@ -153,11 +155,13 @@ def load_belousov_zhabotinsky_time_series(
 
 
 def load_double_pendulum_time_series(coefs: Tuple[float, float, float, float] = (1., 1., 1., 1.),
+                                     friction: float = 0,
                                      initial_conditions: NDArray = np.array(
                                          [3*np.pi/7, 3*np.pi/4, 1, 5]),
                                      t_density: float = 40,
                                      t_duration: float = 250) -> NDArray:
-    dbp = generate_time_series_for_system(functools.partial(double_pendulum_ode, coefs=coefs),
+    system = functools.partial(double_pendulum_ode, coefs=coefs, friction=friction)
+    dbp = generate_time_series_for_system(system,
                                           initial_conditions=initial_conditions,
                                           t_density=t_density,
                                           t_duration=t_duration,
@@ -283,10 +287,10 @@ def explore_belousov_zhabotinsky_time_series() -> None:
 
 
 def explore_double_pendulum_time_series() -> None:
-    dbp = load_double_pendulum_time_series()
+    dbp = load_double_pendulum_time_series(friction=0.03)
     print(dbp.shape)
-    n = 1000
-    plot_2d_data(dbp[:n], title=f"Double pendulum time series, first {n}", show=True)
+    n = 10000
+    # plot_2d_data(dbp[:n], title=f"Double pendulum time series, first {n}", show=True)
     plot_data_componentwise(
         dbp[:n], title=f"Double pendulum time series, first {n}, componentwise",
         show=True, draw_window_len=200)
