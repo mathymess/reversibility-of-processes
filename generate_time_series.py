@@ -1,34 +1,19 @@
 import functools
-import math
 import numpy as np
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 
-from typing import Callable, Generator, Optional, Union, Tuple
+from typing import Callable, Optional, Tuple
 import numpy.typing
 NDArray = numpy.typing.NDArray[np.floating]
 
 
-def harmonic_oscillator(amplitude: float = 1.,
-                        delta_t: float = 0.01,
-                        initial_phase: float = 0.) -> Generator[float, None, None]:
-    t = initial_phase
-    while True:
-        yield amplitude * math.sin(t)
-        t += delta_t
-
-
-def pull_data_from_generator(generator: Generator[Union[NDArray, float], None, None],
-                             n_points: int = 10000) -> NDArray:
-    return np.fromiter(generator, dtype=np.float64, count=n_points)
-
-
-def harmonic_oscillator_ode(x: NDArray, _t: float) -> NDArray:
+def harmonic_oscillator_ode(x: NDArray, _t: float, coef: float, friction: float) -> NDArray:
     assert x.shape == (2,)
-    omega_sq = 1
-    x_dot = np.zeros(2)
+    omega_sq = coef
+    x_dot = np.zeros(2)  # x_dot[0] is the speed, x_dot[1] is acceleration
     x_dot[0] = x[1]
-    x_dot[1] = - omega_sq * x[0]
+    x_dot[1] = - omega_sq * x[0] - friction * x[1]
     return x_dot
 
 
@@ -115,6 +100,21 @@ def generate_time_series_for_system(system: Callable[[NDArray, float], NDArray],
         return sol[:, :halfdim]  # the second half is the derivatives
 
     return sol
+
+
+def load_harmonic_oscillator_time_series(coef: float = 1.,
+                                         initial_conditions: NDArray = np.array([0., 5.]),
+                                         t_density: float = 5,
+                                         t_duration: float = 200,
+                                         friction: float = 0) -> NDArray:
+    hos = generate_time_series_for_system(functools.partial(harmonic_oscillator_ode,
+                                                            coef=coef,
+                                                            friction=friction),
+                                          initial_conditions=initial_conditions,
+                                          t_density=t_density,
+                                          t_duration=t_duration,
+                                          second_order_ode_drop_half=True)
+    return hos
 
 
 def load_two_body_problem_time_series(coef: float = -1.,
@@ -238,7 +238,8 @@ def plot_data_componentwise(*data: NDArray,
     if close_before_plotting:
         plt.close()
 
-    fig, ax = plt.subplots(n_components)
+    fig, ax = plt.subplots(n_components, squeeze=False)
+    ax = ax[0]
     ax[0].set_title(title)
 
     for i in range(n_components):
@@ -261,6 +262,12 @@ def plot_data_componentwise(*data: NDArray,
 
     if show:
         plt.show()
+
+
+def explore_harmonic_oscillator_time_series() -> None:
+    hos = load_harmonic_oscillator_time_series(friction=0.02, t_duration=300)
+    print(hos.shape)
+    plot_data_componentwise(hos, title="Damped harmonic oscillator", show=True)
 
 
 def explore_two_body_time_series() -> None:
@@ -301,3 +308,4 @@ if __name__ == "__main__":
     explore_lorenz_attractor_time_series()
     explore_belousov_zhabotinsky_time_series()
     explore_double_pendulum_time_series()
+    explore_harmonic_oscillator_time_series()
