@@ -3,6 +3,8 @@ scipy
 matplotlib
 scikit-learn
 
+lqrt  # https://github.com/alyakin314/lqrt/
+
 torch
 tensorboard
 # tensorflow

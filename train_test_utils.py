@@ -1,17 +1,25 @@
 from models import ThreeFullyConnectedLayers
 from datasets import TimeSeriesDataset, prepare_time_series_for_learning
 
+import lqrt
+# https://github.com/alyakin314/lqrt/
+
 import os
+from pathlib import Path
 import functools
 import warnings
 import json
+
 import numpy as np
+from scipy.stats import wasserstein_distance
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 
 import torch
 import torch.nn as nn
 import torch.utils.tensorboard as tb
 
-from typing import Callable, List, Optional, Dict
+from typing import Callable, List, Optional, Dict, Iterable, Tuple
 import numpy.typing
 CallbackType = Callable[[float], None]
 NDArray = numpy.typing.NDArray[np.floating]
@@ -137,3 +145,107 @@ def train_test_distribution(time_series: NDArray,
             warnings.warn(f"Tried to write to '{save_output_to_file}' but could not. Error: {e}")
 
     return result
+
+
+class LossDistribution():
+    def __init__(self, filepath: str) -> None:
+        with open(filepath) as file:
+            results = json.load(file)
+
+        self.filepath = filepath
+        self.label = Path(filepath).stem
+
+        self.forward = np.array(results["forward"])
+        self.backward = np.array(results["backward"])
+
+        self.num_runs = self.forward.shape[0]
+        self.num_epochs = self.forward.shape[1]
+
+        assert self.forward.ndim == self.backward.ndim == 2
+        assert self.forward.shape == self.backward.shape
+
+    def plot_learning_curves(self, runs: Iterable[int] = []) -> None:
+        if not runs:
+            runs = range(self.num_runs)
+
+        for losses in self.forward[runs]:
+            plt.plot(losses, label="forward", color="blue", alpha=0.5)
+        for losses in self.backward[runs]:
+            plt.plot(losses, label="backward", color="orange", alpha=0.5)
+
+        plt.legend(handles=[mpatches.Patch(color="blue", label="forward"),
+                            mpatches.Patch(color="orange", label="backward")])
+
+        plt.grid()
+        plt.title(self.label)
+        plt.xlabel("epoch_number")
+        plt.ylabel("loss")
+        plt.yscale("log")
+        plt.show()
+
+    def at_epoch(self, epoch: int) -> Tuple[NDArray, NDArray]:
+        """Return array of losses at the same epoch, but different runs"""
+        return self.forward[:, epoch], self.backward[:, epoch]
+
+    def plot_distribution_at_epoch(self, epoch: int) -> None:
+        f, b = self.at_epoch(epoch)
+
+        plt.hist(f, alpha=0.5, edgecolor="black", label="forward")
+        plt.hist(b, alpha=0.5, edgecolor="black", label="backward")
+
+        plt.title(self.label + f" at epoch {epoch}")
+        plt.xlabel("loss")
+        plt.grid()
+        plt.legend()
+        plt.show()
+
+    def wasserstein(self, epoch: int) -> float:
+        return wasserstein_distance(self.forward[:, epoch], self.backward[:, epoch])
+
+    def wasserstein_all(self) -> List[float]:
+        return [self.wasserstein(epoch) for epoch in range(self.num_epochs)]
+
+    def plot_wasserstein_vs_epoch(self, include_zeroth_epoch: bool = False) -> None:
+        wasserstein_array = self.wasserstein_all()
+
+        plt.plot(wasserstein_array, "o-")
+        plt.grid()
+        plt.title(self.label)
+        plt.xlabel("epoch_number")
+        plt.ylabel("wasserstein_distance")
+
+        if not include_zeroth_epoch:
+            plt.ylim(ymin=min(wasserstein_array) * 0.9, ymax=max(wasserstein_array[1:]) * 1.2)
+
+        plt.show()
+
+    def relmeandiff_at_epoch(self, epoch: int) -> float:
+        f, b = self.at_epoch(epoch)
+        f_mean, b_mean = f.mean(), b.mean()
+        return (b_mean - f_mean) / ((f_mean + b_mean) / 2)
+
+    def relmeandiff_all(self) -> List[float]:
+        return [self.relmeandiff_at_epoch(e) for e in range(self.num_epochs)]
+
+    def plot_relmeandiff_vs_epoch(self) -> None:
+        plt.plot(self.relmeandiff_all(), "o-")
+        plt.grid()
+        plt.title(self.label)
+        plt.xlabel("epoch_number")
+        plt.ylabel("relative difference in mean loss")
+        plt.show()
+
+    def lqrtest(self, epoch: int) -> lqrt.Lqrtest_indResult:
+        return lqrt.lqrtest_ind(self.forward[:, epoch], self.backward[:, epoch], equal_var=False)
+
+    def lqrtest_all(self) -> List[lqrt.Lqrtest_indResult]:
+        return [self.lqrtest(epoch).pvalue for epoch in range(self.num_epochs)]
+
+    def plot_lqrtest_pvalue_vs_epoch(self) -> None:
+        lqr = self.lqrtest_all()
+        plt.plot(lqr, "o-")
+        plt.grid()
+        plt.title(self.label)
+        plt.xlabel("epoch_number")
+        plt.ylabel("lqrt pvalue")
+        plt.show()
