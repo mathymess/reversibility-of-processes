@@ -239,13 +239,12 @@ def plot_data_componentwise(*data: NDArray,
         plt.close()
 
     fig, ax = plt.subplots(n_components, squeeze=False)
-    ax = ax[0]
+    ax = ax.squeeze(axis=1)
     ax[0].set_title(title)
 
     for i in range(n_components):
         for d in data:
-            ax[i].plot(d[:, i])
-            ax[i].scatter(range(len(d)), d[:, i])
+            ax[i].plot(d[:, i], "o-")
 
         ax[i].set_ylabel(f"$x_{i}$")
         ax[i].grid()
