@@ -176,6 +176,7 @@ def load_double_pendulum_time_series(coefs: Tuple[float, float, float, float] = 
 def plot_3d_data(*data: NDArray,
                  title: str = "",
                  close_before_plotting: bool = True,
+                 rainbow: bool = False,
                  show: bool = False) -> None:
     assert len(data) > 0, "Forgot to pass the np.array parameter"
     for d in data:
@@ -194,7 +195,10 @@ def plot_3d_data(*data: NDArray,
 
     for d in data:
         ax.plot(*d.T, lw=0.5)
-        ax.scatter(*d.T, lw=0.5)
+        if rainbow:
+            ax.scatter(*d.T, lw=0.5, cmap="rainbow", c=range(d.shape[0]))
+        else:
+            ax.scatter(*d.T, lw=0.5)
 
     if show:
         plt.show()
@@ -203,6 +207,7 @@ def plot_3d_data(*data: NDArray,
 def plot_2d_data(*data: NDArray,
                  title: str = "",
                  close_before_plotting: bool = True,
+                 rainbow: bool = False,
                  show: bool = False) -> None:
     assert len(data) > 0, "Forgot to pass the np.array parameter"
     for d in data:
@@ -213,7 +218,10 @@ def plot_2d_data(*data: NDArray,
 
     for d in data:
         plt.plot(*d.T, lw=0.5)
-        plt.scatter(*d.T, lw=0.5)
+        if rainbow:
+            plt.scatter(*d.T, lw=0.5, cmap="rainbow", c=range(d.shape[0]))
+        else:
+            plt.scatter(*d.T, lw=0.5)
 
     plt.title(title)
     plt.xlabel("x")
@@ -279,14 +287,16 @@ def explore_two_body_time_series() -> None:
 def explore_lorenz_attractor_time_series() -> None:
     lrz = load_lorenz_attractor_time_series()
     print(lrz.shape)
-    plot_3d_data(lrz, title="Lorenz attractor time series", show=True)
+    plot_3d_data(lrz, title="Lorenz attractor time series", show=True,
+                 rainbow=True)
     plot_data_componentwise(lrz, title="Lorenz attractor time series, componentwise", show=True)
 
 
 def explore_belousov_zhabotinsky_time_series() -> None:
     bzh = load_belousov_zhabotinsky_time_series()
     print(bzh.shape)
-    plot_3d_data(bzh, title="Belousov-Zhabotinsky time series", show=True)
+    plot_3d_data(bzh, title="Belousov-Zhabotinsky time series",
+                 show=True, rainbow=True)
     plot_data_componentwise(
         bzh, title="Belousov-Zhabotinsky time series, componentwise",
         show=True, draw_window_len=200)
