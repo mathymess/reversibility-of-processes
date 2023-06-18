@@ -30,6 +30,11 @@ def permutation_distribution(time_series: NDArray, embed_dim: int = 5) -> Dict:
     return freqs
 
 
+def plot_permutation_distribution(freq: FreqDict):
+    plt.bar(freq.values())
+    plt.show()
+
+
 def freq_dicts_to_prob_arrays(freq1: FreqDict, freq2: FreqDict):
     """Put values from 2 dicts with same keys into 2 correspondingly ordered lists"""
     assert freq1.keys() == freq2.keys()
@@ -43,8 +48,8 @@ def freq_dicts_to_prob_arrays(freq1: FreqDict, freq2: FreqDict):
 
 
 def time_asymmetry_metric(time_series: NDArray, embed_dim: int = 5) -> float:
-    freqs_forward = permutation_distribution(time_series)
-    freqs_backward = permutation_distribution(np.flip(time_series))
+    freqs_forward = permutation_distribution(time_series, embed_dim=embed_dim)
+    freqs_backward = permutation_distribution(np.flip(time_series), embed_dim=embed_dim)
     return jensenshannon(*freq_dicts_to_prob_arrays(freqs_forward, freqs_backward))
 
 
