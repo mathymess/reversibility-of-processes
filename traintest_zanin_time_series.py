@@ -42,18 +42,18 @@ def draft_traintest_henon_map():
 
 def draft_traintest_garch():
     np.random.seed(47)
-    grc = load_garch_time_series(length=4000)
-    filepath = "20230626_distributions/garch_length=2000.json"
+    grc = load_garch_time_series(length=2100)
+    filepath = "20230626_distributions/garch_length=2100.json"
     train_test_distribution(grc, num_runs=1,
-                            window_len=7, hidden_size=25, num_epochs=50,
+                            window_len=7, hidden_size=20, num_epochs=10,
                             save_output_to_file=filepath)
 
-    collection = [load_garch_time_series(length=3000, x_initial=x) for x
+    collection = [load_garch_time_series(length=2000, x_initial=x) for x
                   in np.random.uniform(0, 1, size=6).reshape(-1, 3)]
-    filepath = "20230626_distributions/garch_montecarlo_length=1500.json"
+    filepath = "20230626_distributions/garch_montecarlo_length=2000.json"
     train_test_distribution_montecarlo_ts(collection,
-                                          window_len=7, hidden_size=25,
-                                          datapoint_size=1, num_epochs=30,
+                                          window_len=7, hidden_size=20,
+                                          datapoint_size=1, num_epochs=10,
                                           save_output_to_file=filepath)
 
 
