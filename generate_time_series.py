@@ -317,7 +317,7 @@ def load_logistic_map_time_series(length: int, coef_a: float = 4.0, x_initial: f
     x[0] = x_initial
     for i in range(1, length):
         x[i] = coef_a * x[i-1] * (1 - x[i-1])
-    return x.reshape((x.size, 1))
+    return x.reshape((-1, 1))
 
 
 def load_henon_map_time_series(length: int, coef_a: float = 1.4, coef_b: float = 0.3,
@@ -332,6 +332,20 @@ def load_henon_map_time_series(length: int, coef_a: float = 1.4, coef_b: float =
     return np.stack((x, y)).T
 
 
+def load_garch_time_series(length: int, coef_alpha: float = 1,
+                           x_initial: Tuple[float, float, float] = (0.8, 0.9, 0.95)):
+    x = np.zeros(length)
+    x[:3] = x_initial
+
+    sigma_squared = 0
+    z = np.random.uniform(0, 1, length)
+    for i in range(3, length):
+        sigma_squared = coef_alpha * (1 + x[i-1] ** 2 / 2 + x[i-2] ** 2 / 4 + x[i-3] ** 2 / 8)
+        x[i] = z[i] * np.sqrt(sigma_squared)
+
+    return x.reshape((-1, 1))
+
+
 if __name__ == "__main__":
     explore_two_body_time_series()
     explore_lorenz_attractor_time_series()
@@ -340,3 +354,4 @@ if __name__ == "__main__":
     explore_harmonic_oscillator_time_series()
     plot_data_componentwise(load_logistic_map_time_series(1000))
     plot_data_componentwise(load_henon_map_time_series(100, x_initial=0.6, y_initial=0))
+    plot_data_componentwise(load_garch_time_series(10000, coef_alpha=0.9))
