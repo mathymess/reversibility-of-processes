@@ -320,6 +320,18 @@ def load_logistic_map_time_series(length: int, coef_a: float = 4.0, x_initial: f
     return x.reshape((x.size, 1))
 
 
+def load_henon_map_time_series(length: int, coef_a: float = 1.4, coef_b: float = 0.3,
+                               x_initial: float = 0.6, y_initial: float = 1):
+    x = np.zeros(length)
+    y = np.zeros(length)
+    x[0] = x_initial
+    y[0] = x_initial
+    for i in range(1, length):
+        x[i] = 1 + y[i-1] - coef_a * (x[i-1] ** 2)
+        y[i] = coef_b * x[i-1]
+    return np.stack((x, y)).T
+
+
 if __name__ == "__main__":
     explore_two_body_time_series()
     explore_lorenz_attractor_time_series()
@@ -327,3 +339,4 @@ if __name__ == "__main__":
     explore_double_pendulum_time_series()
     explore_harmonic_oscillator_time_series()
     plot_data_componentwise(load_logistic_map_time_series(1000))
+    plot_data_componentwise(load_henon_map_time_series(100, x_initial=0.6, y_initial=0))
