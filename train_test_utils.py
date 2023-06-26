@@ -1,5 +1,7 @@
 from models import ThreeFullyConnectedLayers
-from datasets import TimeSeriesDataset, prepare_time_series_for_learning
+from datasets import (TimeSeriesDataset,
+                      DataHolderOneDirection,
+                      prepare_time_series_for_learning)
 
 import lqrt
 # https://github.com/alyakin314/lqrt/
@@ -19,7 +21,7 @@ import torch
 import torch.nn as nn
 import torch.utils.tensorboard as tb
 
-from typing import Callable, List, Optional, Dict, Tuple
+from typing import Callable, List, Optional, Dict, Tuple, Iterable
 import numpy.typing
 CallbackType = Callable[[float], None]
 NDArray = numpy.typing.NDArray[np.floating]
@@ -97,6 +99,22 @@ def train_loop_adam_with_scheduler(model: nn.Module,
     model.eval()
 
 
+def write_json_to_file(result: Dict, filepath: str) -> None:
+    if filepath == "":
+        warnings.warn(f"Not saving the following json because the filepath was empty: {result}")
+        return
+
+    dirname = os.path.dirname(filepath)
+    try:
+        if dirname != "":
+            os.makedirs(dirname, exist_ok=True)
+
+        with open(filepath, "a") as file:
+            json.dump(result, file)
+    except IOError as e:
+        warnings.warn(f"Tried to write to '{filepath}' but could not. Error: {e}")
+
+
 def train_test_distribution(time_series: NDArray,
                             window_len: int,
                             target_len: int = 1,
@@ -131,18 +149,51 @@ def train_test_distribution(time_series: NDArray,
         return callback.get_values()
 
     forward_losses, backward_losses = [], []
-    for i in range(num_runs):
+    for _ in range(num_runs):
         forward_losses.append(get_forward_losses())
         backward_losses.append(get_backward_losses())
 
     result = {"forward": forward_losses, "backward": backward_losses}
-    if save_output_to_file != "":
-        try:
-            os.makedirs(os.path.dirname(save_output_to_file), exist_ok=True)
-            with open(save_output_to_file, "a") as file:
-                json.dump(result, file)
-        except IOError as e:
-            warnings.warn(f"Tried to write to '{save_output_to_file}' but could not. Error: {e}")
+    write_json_to_file(result, save_output_to_file)
+
+    return result
+
+
+def train_test_distribution_montecarlo_ts(time_series_collection: Iterable[NDArray],
+                                          window_len: int,
+                                          target_len: int = 1,
+                                          hidden_size: int = 13,
+                                          datapoint_size: int = 3,
+                                          num_epochs: int = 50,
+                                          num_runs: int = 100,
+                                          save_output_to_file: str = "") -> Dict:
+    train_loop = functools.partial(train_loop_adam_with_scheduler, num_epochs=num_epochs)
+
+    def get_model() -> ThreeFullyConnectedLayers:
+        return ThreeFullyConnectedLayers(window_len=window_len,
+                                         target_len=target_len,
+                                         datapoint_size=datapoint_size,
+                                         hidden_layer1_size=hidden_size,
+                                         hidden_layer2_size=hidden_size)
+
+    def get_losses(dho: DataHolderOneDirection):
+        m = get_model()
+        callback = EpochlyCallbackBare()
+        train_loop(m, dho.train_loader, dho.test_dataset, epochly_callback=callback)
+        return callback.get_values()
+
+    forward_losses, backward_losses = [], []
+    for time_series in time_series_collection:
+        dh = prepare_time_series_for_learning(train_ts=time_series,
+                                              test_ts=time_series.copy(),
+                                              window_len=window_len,
+                                              target_len=target_len,
+                                              take_each_nth_chunk=1)
+        forward_losses.append(get_losses(dh.forward))
+        backward_losses.append(get_losses(dh.backward))
+
+    result = {"forward": forward_losses, "backward": backward_losses}
+    write_json_to_file(result, save_output_to_file)
 
     return result
 
