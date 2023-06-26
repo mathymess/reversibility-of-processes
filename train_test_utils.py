@@ -165,7 +165,6 @@ def train_test_distribution_montecarlo_ts(time_series_collection: Iterable[NDArr
                                           hidden_size: int = 13,
                                           datapoint_size: int = 3,
                                           num_epochs: int = 50,
-                                          num_runs: int = 100,
                                           save_output_to_file: str = "") -> Dict:
     train_loop = functools.partial(train_loop_adam_with_scheduler, num_epochs=num_epochs)
 
