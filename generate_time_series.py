@@ -312,9 +312,18 @@ def explore_double_pendulum_time_series() -> None:
         show=True, draw_window_len=200)
 
 
+def load_logistic_map_time_series(length: int, coef_a: float = 4.0, x_initial: float = 0.6):
+    x = np.zeros(length)
+    x[0] = x_initial
+    for i in range(1, length):
+        x[i] = coef_a * x[i-1] * (1 - x[i-1])
+    return x.reshape((x.size, 1))
+
+
 if __name__ == "__main__":
     explore_two_body_time_series()
     explore_lorenz_attractor_time_series()
     explore_belousov_zhabotinsky_time_series()
     explore_double_pendulum_time_series()
     explore_harmonic_oscillator_time_series()
+    plot_data_componentwise(load_logistic_map_time_series(1000))
