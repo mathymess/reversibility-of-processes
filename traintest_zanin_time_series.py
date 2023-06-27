@@ -5,6 +5,7 @@ from generate_time_series import (load_logistic_map_time_series,
 from train_test_utils import train_test_distribution, train_test_distribution_montecarlo_ts
 
 import numpy as np
+import tqdm
 
 
 def traintest_logistic_map():
@@ -53,15 +54,15 @@ def traintest_arnold_map():
                             save_output_to_file=filepath)
     print(filepath)
 
-    # np.random.seed(45)
-    # collection = [load_arnold_map_time_series(length=2000, x_initial=x, y_initial=y) for x, y
-    #               in np.random.uniform(0, 1, size=200).reshape(-1, 2)]
-    # filepath = "20230626_distributions/arnold_montecarlo.json"
-    # train_test_distribution_montecarlo_ts(collection,
-    #                                       window_len=5, hidden_size=20,
-    #                                       datapoint_size=2, num_epochs=30,
-    #                                       save_output_to_file=filepath)
-    # print(filepath)
+    np.random.seed(45)
+    collection = [load_arnold_map_time_series(length=2000, x_initial=x, y_initial=y) for x, y
+                  in np.random.uniform(0, 1, size=200).reshape(-1, 2)]
+    filepath = "20230626_distributions/arnold_montecarlo.json"
+    train_test_distribution_montecarlo_ts(collection,
+                                          window_len=5, hidden_size=20,
+                                          datapoint_size=2, num_epochs=30,
+                                          save_output_to_file=filepath)
+    print(filepath)
 
 
 def traintest_garch():
@@ -83,8 +84,21 @@ def traintest_garch():
     print(filepath)
 
 
+def traintest_logistic_vs_length():
+    np.random.seed(154125)
+    for length in tqdm.tqdm((500, 1000, 1300, 1700, 2000, 2500, 3000)):
+        filepath = f"20230626_distributions/logistic_vs_length/{length}.json"
+        collection = [load_logistic_map_time_series(length=length, x_initial=x) for x
+                      in np.random.uniform(0.6, 0.8, size=30)]
+        train_test_distribution_montecarlo_ts(collection,
+                                              window_len=5, hidden_size=15,
+                                              datapoint_size=1, num_epochs=30,
+                                              save_output_to_file=filepath)
+
+
 if __name__ == "__main__":
     # traintest_logistic_map()
     # traintest_henon_map()
-    traintest_arnold_map()
+    # traintest_arnold_map()
     # traintest_garch()
+    traintest_logistic_vs_length()
