@@ -321,7 +321,7 @@ def load_logistic_map_time_series(length: int, coef_a: float = 4.0, x_initial: f
 
 
 def load_henon_map_time_series(length: int, coef_a: float = 1.4, coef_b: float = 0.3,
-                               x_initial: float = 0.6, y_initial: float = 1):
+                               x_initial: float = 0.6, y_initial: float = 0.6):
     x = np.zeros(length)
     y = np.zeros(length)
     x[0] = x_initial
@@ -358,12 +358,12 @@ def load_garch_time_series(length: int, coef_alpha: float = 1,
 
 
 if __name__ == "__main__":
-    # explore_two_body_time_series()
-    # explore_lorenz_attractor_time_series()
-    # explore_belousov_zhabotinsky_time_series()
-    # explore_double_pendulum_time_series()
-    # explore_harmonic_oscillator_time_series()
-    # plot_data_componentwise(load_logistic_map_time_series(1000))
-    # plot_data_componentwise(load_henon_map_time_series(100, x_initial=0.6, y_initial=0))
+    explore_two_body_time_series()
+    explore_lorenz_attractor_time_series()
+    explore_belousov_zhabotinsky_time_series()
+    explore_double_pendulum_time_series()
+    explore_harmonic_oscillator_time_series()
+    plot_data_componentwise(load_logistic_map_time_series(1000))
+    plot_data_componentwise(load_henon_map_time_series(4000, x_initial=0.6))
     plot_data_componentwise(load_arnold_map_time_series(1000))
-    # plot_data_componentwise(load_garch_time_series(10000, coef_alpha=0.9))
+    plot_data_componentwise(load_garch_time_series(10000, coef_alpha=0.9))

@@ -30,16 +30,16 @@ def traintest_henon_map():
     hen = load_henon_map_time_series(length=2000)
     filepath = "20230626_distributions/henon.json"
     train_test_distribution(hen, num_runs=100,
-                            window_len=7, hidden_size=20, num_epochs=30,
+                            window_len=5, hidden_size=20, num_epochs=30,
                             save_output_to_file=filepath)
     print(filepath)
 
     np.random.seed(45)
     collection = [load_henon_map_time_series(length=1500, x_initial=x, y_initial=y) for x, y
-                  in np.random.uniform(0, 1, size=200).reshape(-1, 2)]
+                  in np.random.uniform(0.1, 0.9, size=200).reshape(-1, 2)]
     filepath = "20230626_distributions/henon_montecarlo.json"
     train_test_distribution_montecarlo_ts(collection,
-                                          window_len=7, hidden_size=15,
+                                          window_len=5, hidden_size=20,
                                           datapoint_size=2, num_epochs=30,
                                           save_output_to_file=filepath)
     print(filepath)
@@ -84,7 +84,7 @@ def traintest_garch():
 
 
 if __name__ == "__main__":
-    traintest_logistic_map()
+    # traintest_logistic_map()
     traintest_henon_map()
-    traintest_arnold_map()
-    traintest_garch()
+    # traintest_arnold_map()
+    # traintest_garch()
