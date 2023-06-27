@@ -214,6 +214,7 @@ class LossDistribution():
         assert self.forward.ndim == self.backward.ndim == 2
         assert self.forward.shape == self.backward.shape
 
+    # Learning curves
     def plot_learning_curves(self, run_indices: List[int] = []) -> None:
         if not run_indices:
             run_indices = list(range(self.num_runs))
@@ -249,6 +250,7 @@ class LossDistribution():
         plt.legend()
         plt.show()
 
+    # Wasserstein
     def wasserstein(self, epoch: int) -> float:
         return wasserstein_distance(self.forward[:, epoch], self.backward[:, epoch])
 
@@ -269,6 +271,7 @@ class LossDistribution():
 
         plt.show()
 
+    # Normalized wasserstein
     def normalized_wasserstein(self, epoch: int) -> float:
         f, b = self.at_epoch(epoch)
         norm = np.mean(np.stack((f, b)))
@@ -286,6 +289,26 @@ class LossDistribution():
         plt.xlabel("epoch_number")
         plt.ylabel("normalized_wasserstein_distance")
 
+    # Normalized signed wasserstein
+    def normalized_signed_wasserstein(self, epoch: int) -> float:
+        f, b = self.at_epoch(epoch)
+        norm = np.mean(np.stack((f, b)))
+        w_norm = wasserstein_distance(f, b) / norm
+        return w_norm * np.sign(b.mean() - f.mean())
+
+    def normalized_signed_wasserstein_all(self) -> List[float]:
+        return [self.normalized_signed_wasserstein(epoch) for epoch in range(self.num_epochs)]
+
+    def plot_normalized_signed_wasserstein_vs_epoch(self) -> None:
+        wasserstein_array = self.normalized_signed_wasserstein_all()
+
+        plt.plot(wasserstein_array, "o-")
+        plt.grid()
+        plt.title(self.label)
+        plt.xlabel("epoch_number")
+        plt.ylabel("normalized_signed_wasserstein_distance")
+
+    # Relative difference in mean
     def relmeandiff_at_epoch(self, epoch: int) -> float:
         f, b = self.at_epoch(epoch)
         f_mean, b_mean = f.mean(), b.mean()
@@ -302,6 +325,7 @@ class LossDistribution():
         plt.ylabel("relative difference in mean loss")
         plt.show()
 
+    # Likelihood ratio test from GiHub, see lqrt
     def lqrtest(self, epoch: int) -> lqrt.Lqrtest_indResult:  # type: ignore
         return lqrt.lqrtest_ind(self.forward[:, epoch],  # type: ignore
                                 self.backward[:, epoch], equal_var=False)
