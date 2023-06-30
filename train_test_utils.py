@@ -308,6 +308,9 @@ class LossDistribution():
         plt.xlabel("epoch_number")
         plt.ylabel("normalized_signed_wasserstein_distance")
 
+    def integral_normalized_wasserstein(self) -> float:
+        return np.mean(np.abs(self.normalized_wasserstein_all()))
+
     # Relative difference in mean
     def relmeandiff_at_epoch(self, epoch: int) -> float:
         f, b = self.at_epoch(epoch)
