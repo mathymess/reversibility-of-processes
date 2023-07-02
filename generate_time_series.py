@@ -343,8 +343,9 @@ def load_arnold_map_time_series(length: int, x_initial: float = 0.699, y_initial
     return np.stack((x, y)).T
 
 
-def load_garch_time_series(length: int, coef_alpha: float = 1,
-                           x_initial: Tuple[float, float, float] = (0.8, 0.9, 0.95)):
+def load_arch_time_series(length: int, coef_alpha: float = 1,
+                          x_initial: Tuple[float, float, float] = (0.8, 0.9, 0.95)):
+    # Autoregressive Conditional Heteroskedacity model
     x = np.zeros(length)
     x[:3] = x_initial
 
@@ -363,7 +364,7 @@ if __name__ == "__main__":
     explore_belousov_zhabotinsky_time_series()
     explore_double_pendulum_time_series()
     explore_harmonic_oscillator_time_series()
-    plot_data_componentwise(load_logistic_map_time_series(1000))
-    plot_data_componentwise(load_henon_map_time_series(4000, x_initial=0.6))
-    plot_data_componentwise(load_arnold_map_time_series(1000))
-    plot_data_componentwise(load_garch_time_series(10000, coef_alpha=0.9))
+    plot_data_componentwise(load_logistic_map_time_series(1000), title="Logistic map")
+    plot_data_componentwise(load_henon_map_time_series(4000, x_initial=0.6), title="Henon map")
+    plot_data_componentwise(load_arnold_map_time_series(1000), title="Arnold map")
+    plot_data_componentwise(load_arch_time_series(10000, coef_alpha=0.9), title="ARCH model")
