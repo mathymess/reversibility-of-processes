@@ -97,7 +97,7 @@ def traintest_garch():
 
 def traintest_logistic_vs_length():
     np.random.seed(154125)
-    for length in tqdm.tqdm((500, 1000, 1300, 1700, 2000, 2500, 3000)):
+    for length in tqdm.tqdm((650, 850, 1150, 1500, 1850, 2250, 2750, 3250, 3500)):
         filepath = f"20230626_distributions/logistic_vs_length/{length}.json"
         collection = [load_logistic_map_time_series(length=length, x_initial=x) for x
                       in np.random.uniform(0.6, 0.8, size=30)]
@@ -106,11 +106,23 @@ def traintest_logistic_vs_length():
                                               datapoint_size=1, num_epochs=30,
                                               save_output_to_file=filepath)
 
+def traintest_henon_vs_length():
+    np.random.seed(154)
+    for length in tqdm.tqdm((500, 650, 850, 1000, 1150, 1300, 1500, 1620, 1850,
+                             2000, 2250, 2500, 2750, 3000, 3250, 3500)):
+        filepath = f"20230626_distributions/henon_vs_length/{length}.json"
+        collection = [load_logistic_map_time_series(length=length, x_initial=x) for x
+                      in np.random.uniform(0.6, 0.8, size=30)]
+        train_test_distribution_montecarlo_ts(collection,
+                                              window_len=5, hidden_size=15,
+                                              datapoint_size=1, num_epochs=30,
+                                              save_output_to_file=filepath)
 
 if __name__ == "__main__":
     # traintest_logistic_map()
     # traintest_henon_map()
     # traintest_arnold_map()
     # traintest_arch()
-    traintest_garch()
-    # traintest_logistic_vs_length()
+    # traintest_garch()
+    traintest_logistic_vs_length()
+    traintest_henon_vs_length()
