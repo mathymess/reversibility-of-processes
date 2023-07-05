@@ -1,7 +1,8 @@
 from generate_time_series import (load_logistic_map_time_series,
                                   load_henon_map_time_series,
                                   load_arnold_map_time_series,
-                                  load_arch_time_series)
+                                  load_arch_time_series,
+                                  load_garch_time_series)
 from train_test_utils import train_test_distribution, train_test_distribution_montecarlo_ts
 
 import numpy as np
@@ -84,6 +85,16 @@ def traintest_arch():
     print(filepath)
 
 
+def traintest_garch():
+    np.random.seed(48)
+    grc = load_garch_time_series(length=3000)
+    filepath = "20230626_distributions/garch.json"
+    train_test_distribution(grc, num_runs=10,
+                            window_len=5, hidden_size=20, num_epochs=30,
+                            save_output_to_file=filepath)
+    print(filepath)
+
+
 def traintest_logistic_vs_length():
     np.random.seed(154125)
     for length in tqdm.tqdm((500, 1000, 1300, 1700, 2000, 2500, 3000)):
@@ -101,4 +112,5 @@ if __name__ == "__main__":
     # traintest_henon_map()
     # traintest_arnold_map()
     # traintest_arch()
-    traintest_logistic_vs_length()
+    traintest_garch()
+    # traintest_logistic_vs_length()

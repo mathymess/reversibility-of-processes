@@ -358,6 +358,26 @@ def load_arch_time_series(length: int, coef_alpha: float = 1,
     return x.reshape((-1, 1))
 
 
+def load_garch_time_series(length: int, coef_alpha: float = 0.5,
+                           x_initial: Tuple[float, float, float] = (0.5, 0.5, 0.5),
+                           sigma_squared_initial: Tuple[float, float, float] = (0.0, 0.0, 0.0)):
+    # Generalized Autoregressive Conditional Heteroskedacity model
+    x = np.zeros(length)
+    x[:3] = x_initial
+
+    sigma_squared = np.zeros(length)
+    sigma_squared[:3] = sigma_squared_initial
+
+    z = np.random.uniform(0, 1, length)
+    for i in range(3, length):
+        sigma_squared[i] = coef_alpha * (
+            1 + x[i-1] ** 2 / 2 + x[i-2] ** 2 / 4 + x[i-3] ** 2 / 8 +
+            sigma_squared[i-1] / 2 + sigma_squared[i-2] / 4 + sigma_squared[i-3] / 8)
+        x[i] = z[i] * np.sqrt(sigma_squared[i])
+
+    return x.reshape((-1, 1))
+
+
 if __name__ == "__main__":
     explore_two_body_time_series()
     explore_lorenz_attractor_time_series()
@@ -368,3 +388,4 @@ if __name__ == "__main__":
     plot_data_componentwise(load_henon_map_time_series(4000, x_initial=0.6), title="Henon map")
     plot_data_componentwise(load_arnold_map_time_series(1000), title="Arnold map")
     plot_data_componentwise(load_arch_time_series(10000, coef_alpha=0.9), title="ARCH model")
+    plot_data_componentwise(load_garch_time_series(1000, coef_alpha=0.5), title="GARCH model")
