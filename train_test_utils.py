@@ -215,7 +215,7 @@ class LossDistribution():
         assert self.forward.shape == self.backward.shape
 
     # Learning curves
-    def plot_learning_curves(self, run_indices: List[int] = []) -> None:
+    def plot_learning_curves(self, run_indices: List[int] = [], log_scale: bool = True) -> None:
         if not run_indices:
             run_indices = list(range(self.num_runs))
 
@@ -231,7 +231,8 @@ class LossDistribution():
         plt.title(self.label)
         plt.xlabel("epoch_number")
         plt.ylabel("loss")
-        plt.yscale("log")
+        if log_scale:
+            plt.yscale("log")
         plt.show()
 
     def at_epoch(self, epoch: int) -> Tuple[NDArray, NDArray]:
