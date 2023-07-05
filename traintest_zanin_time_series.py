@@ -88,9 +88,9 @@ def traintest_arch():
 def traintest_garch():
     np.random.seed(48)
     grc = load_garch_time_series(length=3000)
-    filepath = "20230626_distributions/garch.json"
+    filepath = "20230626_distributions/garch_window_len=20.json"
     train_test_distribution(grc, num_runs=10,
-                            window_len=5, hidden_size=20, num_epochs=30,
+                            window_len=20, hidden_size=20, num_epochs=30,
                             save_output_to_file=filepath)
     print(filepath)
 
