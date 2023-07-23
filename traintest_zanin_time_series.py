@@ -106,6 +106,7 @@ def traintest_logistic_vs_length():
                                               datapoint_size=1, num_epochs=30,
                                               save_output_to_file=filepath)
 
+
 def traintest_henon_vs_length():
     np.random.seed(154)
     for length in tqdm.tqdm((500, 650, 850, 1000, 1150, 1300, 1500, 1620, 1850,
@@ -117,6 +118,7 @@ def traintest_henon_vs_length():
                                               window_len=5, hidden_size=15,
                                               datapoint_size=1, num_epochs=30,
                                               save_output_to_file=filepath)
+
 
 if __name__ == "__main__":
     # traintest_logistic_map()
