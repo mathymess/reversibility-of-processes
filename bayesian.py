@@ -1,8 +1,8 @@
-import torch
-import torch.nn as nn
-
+import os
 import numpy.typing
 from typing import Tuple
+import torch
+import torch.nn as nn
 
 import pyro
 import pyro.distributions as dist
@@ -93,30 +93,61 @@ def prepare_simple_1d_time_series(ts: NDArray,
 
     windows = windows.squeeze(-1)
     targets = targets.squeeze(-1)
-    
+
     windows = torch.from_numpy(windows).float()
     targets = torch.from_numpy(targets).float()
     return windows, targets
 
 
-def train_logistic():
-    windows, targets = prepare_simple_1d_time_series(ts=load_logistic_map_time_series(length=2000),
-                                                     window_len=1)
-    model = BayesianThreeFCLayers(window_len=1, target_len=1, datapoint_size=1)
+def get_samples_from_posterior_predictive(windows: torch.tensor,
+                                          targets: torch.tensor,
+                                          num_samples: int = 100) -> pyro.infer.Predictive:
+    assert windows.ndim == targets.ndim == 2
+    assert windows.shape[0] == targets.shape[0]
 
-    mcmc = pyro.infer.MCMC(pyro.infer.NUTS(model, jit_compile=True), num_samples=100)
+    model = BayesianThreeFCLayers(window_len=windows.shape[-1], target_len=1, datapoint_size=1)
+    mcmc = pyro.infer.MCMC(pyro.infer.NUTS(model, jit_compile=True), num_samples)
     mcmc.run(windows, targets)
-
     predictive = pyro.infer.Predictive(model=model, posterior_samples=mcmc.get_samples())
 
-    x_test = torch.linspace(0.001, 0.999, 1000).reshape(-1, 1)
-    y_test = (4.0 * x_test * (1 - x_test)).squeeze(-1)
+    return predictive
 
-    preds = predictive(x_test)
-    print('preds["obs"].shape =', preds["obs"].shape)
-    torch.save(preds["obs"], "20230723_preds.torch")
+
+def posterior_predictive_forward_and_backward(
+        train_ts: NDArray,
+        test_ts: NDArray,
+        save_dir: str,
+        window_len: int = 1,
+        num_samples: int = 100) -> Tuple[torch.tensor, torch.tensor]:
+    if os.path.isdir(save_dir):
+        raise FileExistsError(f"'{save_dir}' exists, will not overwrite")
+
+    predictive_f = get_samples_from_posterior_predictive(
+            *prepare_simple_1d_time_series(train_ts, window_len), num_samples)
+    predictive_b = get_samples_from_posterior_predictive(
+            *prepare_simple_1d_time_series(train_ts, window_len, reverse=True), num_samples)
+
+    windows_test, targets_test = prepare_simple_1d_time_series(test_ts, window_len)
+
+    samples_f = predictive_f(windows_test)
+    samples_b = predictive_b(windows_test)
+
+    torch.save(windows_test, os.path.join(save_dir, "windows_test.torch"))
+    torch.save(targets_test, os.path.join(save_dir, "targets_test.torch"))
+    torch.save(samples_f, os.path.join(save_dir, "samples.forward.torch"))
+    torch.save(samples_b, os.path.join(save_dir, "samples.backward.torch"))
+
+    return samples_f, samples_b
+
+
+def train_logistic():
+    posterior_predictive_forward_and_backward(
+        train_ts=load_logistic_map_time_series(2000),
+        test_ts=torch.linspace(0.001, 0.999, 1000).reshape(-1, 1),
+        save_dir="20230724_preds/logistics1",
+        window_len=1)
 
 
 if __name__ == "__main__":
-    # test_model_output_dimensions()
+    test_model_output_dimensions()
     train_logistic()
