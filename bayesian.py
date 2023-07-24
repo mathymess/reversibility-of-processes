@@ -1,19 +1,28 @@
 import torch
 import torch.nn as nn
 
+import numpy.typing
+from typing import Tuple
+
 import pyro
 import pyro.distributions as dist
 from pyro.nn import PyroModule, PyroSample
 
 from generate_time_series import load_logistic_map_time_series
-from datasets import time_series_to_dataset
+from datasets import chop_time_series_into_chunks, split_chunks_into_windows_and_targets
+
+
+NDArray = numpy.typing.NDArray[numpy.floating]
 
 
 class BayesianThreeFCLayers(PyroModule):
-    def __init__(self, window_len: int, datapoint_size: int, target_len: int = 1,
+    def __init__(self, window_len: int, datapoint_size: int = 1, target_len: int = 1,
                  hidden_layer1_size: int = 10, hidden_layer2_size: int = 10,
                  prior_scale: float = 10.):
         super().__init__()
+        if datapoint_size != 1 or target_len != 1:
+            raise NotImplementedError("I didn't figure out how to support "
+                                      "tensors of sophisticated shape")
 
         self.window_len: int = window_len
         self.datapoint_size: int = datapoint_size
@@ -46,56 +55,65 @@ class BayesianThreeFCLayers(PyroModule):
         self.fc3.weight = PyroSample(dist.Normal(0., prior_scale).expand(size3[::-1]).to_event(2))
         self.fc3.bias = PyroSample(dist.Normal(0., prior_scale).expand(size3[-1:]).to_event(1))
 
-    def forward(self, windows: torch.tensor, y=None) -> torch.tensor:
-        # Flatten the last dimension of 'windows', i.e. remove []'s
-        # around each datapoint in the [batch of [windows of [datapoints]]].
-        ret = windows.flatten(start_dim=-2, end_dim=-1)
+    def forward(self, windows: torch.tensor, y: torch.tensor = None) -> torch.tensor:
+        # assert windows.shape[-1] == self.window_len * self.datapoint_size
+        sigma = pyro.sample("sigma", dist.Uniform(0., 5.))
 
+        ret = windows
         ret = self.relu1(self.fc1(ret))
         ret = self.relu2(self.fc2(ret))
         ret = self.fc3(ret)
-
-        # # Unflatten the last dimension, return back the []'s around each datapoint.
-        # ret = ret.unflatten(dim=-1, sizes=(self.target_len, self.datapoint_size))
+        ret = ret.squeeze(-1)
 
         # Just copying this from the tutorial, I have no idea what it does.
         # https://pyro.ai/examples/bayesian_regression.html
-        sigma = pyro.sample("sigma", dist.Uniform(0., 5.))
         with pyro.plate("data", windows.shape[0]):
             obs = pyro.sample("obs", dist.Normal(ret, sigma), obs=y)
-            print(y, windows.shape, ret.shape, obs.shape)
 
         return ret
 
 
 def test_model_output_dimensions() -> None:
-    model = BayesianThreeFCLayers(window_len=2, datapoint_size=3, target_len=2)
-
-    window = torch.tensor([[1., 2., 3.], [4., 5., 6.]])
-    target = model(window)
-    assert target.ndim == 2 and target.shape == (2, 3)
-
-    batch = torch.tensor([[[1., 2., 3.], [4., 5., 6.]],
-                          [[7., 8., 9.], [0., 3., 7.]]])
+    model = BayesianThreeFCLayers(window_len=2, datapoint_size=1, target_len=1)
+    batch = torch.tensor([[1., 2.], [7., 8.]])
     targets = model(batch)
-    assert targets.ndim == 3 and targets.shape == (2, 2, 3)
-
+    assert targets.ndim == 1 and targets.shape == (2,)
     print("test_model_output_dimensions passed successfully!")
 
 
-def train_logistic():
-    d = time_series_to_dataset(ts=load_logistic_map_time_series(length=10),
-                               window_len=1, take_each_nth_chunk=1, target_len=1)
+def prepare_simple_1d_time_series(ts: NDArray,
+                                  window_len: int,
+                                  take_each_nth_chunk: int = 1,
+                                  reverse: bool = False) -> Tuple[NDArray, NDArray]:
+    chunks = chop_time_series_into_chunks(time_series=ts,
+                                          chunk_len=window_len + 1,
+                                          take_each_nth_chunk=take_each_nth_chunk,
+                                          reverse=reverse)
+    windows, targets = split_chunks_into_windows_and_targets(chunks, target_len=1)
 
+    windows = windows.squeeze(-1)
+    targets = targets.squeeze(-1)
+    
+    windows = torch.from_numpy(windows).float()
+    targets = torch.from_numpy(targets).float()
+    return windows, targets
+
+
+def train_logistic():
+    windows, targets = prepare_simple_1d_time_series(ts=load_logistic_map_time_series(length=2000),
+                                                     window_len=1)
     model = BayesianThreeFCLayers(window_len=1, target_len=1, datapoint_size=1)
 
-    mcmc = pyro.infer.MCMC(pyro.infer.NUTS(model, jit_compile=True), num_samples=3)
-    mcmc.run(d.windows, d.targets)
+    mcmc = pyro.infer.MCMC(pyro.infer.NUTS(model, jit_compile=True), num_samples=100)
+    mcmc.run(windows, targets)
 
     predictive = pyro.infer.Predictive(model=model, posterior_samples=mcmc.get_samples())
-    x_test = torch.linspace(0.001, 0.999, 1000).reshape(-1, 1, 1)
-    y_test = 4.0 * x_test * (1 - x_test)
+
+    x_test = torch.linspace(0.001, 0.999, 1000).reshape(-1, 1)
+    y_test = (4.0 * x_test * (1 - x_test)).squeeze(-1)
+
     preds = predictive(x_test)
+    print('preds["obs"].shape =', preds["obs"].shape)
     torch.save(preds["obs"], "20230723_preds.torch")
 
 
