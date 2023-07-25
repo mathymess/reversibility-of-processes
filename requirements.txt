@@ -3,11 +3,11 @@ scipy
 matplotlib
 scikit-learn
 
-lqrt  # https://github.com/alyakin314/lqrt/
-
 torch
 tensorboard
-# tensorflow
+pyro-ppl
+
+lqrt  # https://github.com/alyakin314/lqrt/
 
 # ipython
 # ipykernel  # to add venv as a kernel
