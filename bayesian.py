@@ -67,7 +67,8 @@ class BayesianThreeFCLayers(PyroModule):
         # https://pyro.ai/examples/bayesian_regression.html
         with pyro.plate("data", windows.shape[0]):
             # TODO: .squeeze(-1) is a hack, but otherwise everything fails if y or ret are not 1D
-            obs = pyro.sample("obs", dist.Normal(ret.squeeze(-1), sigma * sigma),
+            obs = pyro.sample("obs",  # noqa: F841
+                              dist.Normal(ret.squeeze(-1), sigma * sigma),
                               obs=None if y is None else y.squeeze(-1))
 
         return ret
@@ -106,7 +107,7 @@ def get_samples_from_posterior_predictive(windows: torch.tensor,
     assert windows.shape[0] == targets.shape[0]
 
     model = BayesianThreeFCLayers(window_len=windows.shape[-1], target_len=1, datapoint_size=1)
-    mcmc = pyro.infer.MCMC(pyro.infer.NUTS(model, jit_compile=True), num_samples)
+    mcmc = pyro.infer.MCMC(pyro.infer.NUTS(model, jit_compile=False), num_samples)
     mcmc.run(windows, targets)
     predictive = pyro.infer.Predictive(model=model, posterior_samples=mcmc.get_samples())
 
@@ -115,7 +116,6 @@ def get_samples_from_posterior_predictive(windows: torch.tensor,
 
 def posterior_predictive_forward_and_backward(
         train_ts: NDArray,
-        test_ts: NDArray,
         save_dir: str,
         window_len: int = 1,
         num_samples: int = 100) -> Tuple[torch.tensor, torch.tensor]:
@@ -123,55 +123,43 @@ def posterior_predictive_forward_and_backward(
 
     predictive_f = get_samples_from_posterior_predictive(
             *prepare_simple_1d_time_series(train_ts, window_len), num_samples)
+    torch.save(predictive_f, os.path.join(save_dir, "predictive.forward.torch"))
+    print("Saved forward predictive for", save_dir)
+
     predictive_b = get_samples_from_posterior_predictive(
             *prepare_simple_1d_time_series(train_ts, window_len, reverse=True), num_samples)
+    torch.save(predictive_b, os.path.join(save_dir, "predictive.backward.torch"))
+    print("Saved backward predictive for", save_dir)
 
-    windows_test, targets_test = prepare_simple_1d_time_series(test_ts, window_len)
-
-    samples_f = predictive_f(windows_test)
-    samples_b = predictive_b(windows_test)
-
-    torch.save(windows_test, os.path.join(save_dir, "windows_test.torch"))
-    torch.save(targets_test, os.path.join(save_dir, "targets_test.torch"))
-    torch.save(samples_f, os.path.join(save_dir, "samples.forward.torch"))
-    torch.save(samples_b, os.path.join(save_dir, "samples.backward.torch"))
-
-    return samples_f, samples_b
+    return predictive_f, predictive_b
 
 
 def train_logistic():
     posterior_predictive_forward_and_backward(
         train_ts=load_logistic_map_time_series(2000),
-        test_ts=np.linspace(0.001, 0.999, 100).reshape(-1, 1),
         save_dir="20230724_preds/logistics1",
         window_len=1)
 
     posterior_predictive_forward_and_backward(
         train_ts=load_logistic_map_time_series(2000),
-        test_ts=np.linspace(0.001, 0.999, 100).reshape(-1, 1),
         save_dir="20230724_preds/logistics2",
         window_len=2)
 
 
 def train_garch():
-    torch.manual_seed(42)
-    test_ts = numpy.random.uniform(0, 1, size=(1000, 1))
-
-    # posterior_predictive_forward_and_backward(
-    #     train_ts=load_garch_time_series(2000, coef_alpha=0.1),
-    #     test_ts=0.3 * test_ts,
-    #     save_dir="20230724_preds/garch01",
-    #     window_len=3)
+    np.random.seed(42)  # reproducible generation of GARCH time series
+    posterior_predictive_forward_and_backward(
+        train_ts=load_garch_time_series(2000, coef_alpha=0.1),
+        save_dir="20230724_preds/garch01",
+        window_len=3)
 
     posterior_predictive_forward_and_backward(
         train_ts=load_garch_time_series(2000, coef_alpha=0.7),
-        test_ts=2. * test_ts,
         save_dir="20230724_preds/garch02",
-        window_len=3,
-        num_samples=20)
+        window_len=3)
 
 
 if __name__ == "__main__":
     test_model_output_dimensions()
-    # train_garch()
-    # train_logistic()
+    train_logistic()
+    train_garch()
