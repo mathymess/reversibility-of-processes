@@ -359,7 +359,7 @@ def load_arch_time_series(length: int, coef_alpha: float = 1,
 
 
 def load_garch_time_series(length: int, coef_alpha: float = 0.5,
-                           x_initial: Tuple[float, float, float] = (0.5, 0.5, 0.5),
+                           x_initial: Tuple[float, float, float] = (0.1, 0.1, 0.1),
                            sigma_squared_initial: Tuple[float, float, float] = (0.0, 0.0, 0.0)):
     # Generalized Autoregressive Conditional Heteroskedacity model
     x = np.zeros(length)
@@ -388,4 +388,4 @@ if __name__ == "__main__":
     plot_data_componentwise(load_henon_map_time_series(4000, x_initial=0.6), title="Henon map")
     plot_data_componentwise(load_arnold_map_time_series(1000), title="Arnold map")
     plot_data_componentwise(load_arch_time_series(10000, coef_alpha=0.9), title="ARCH model")
-    plot_data_componentwise(load_garch_time_series(1000, coef_alpha=0.5), title="GARCH model")
+    plot_data_componentwise(load_garch_time_series(2000, coef_alpha=0.1), title="GARCH model")

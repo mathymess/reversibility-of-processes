@@ -8,7 +8,7 @@ import pyro
 import pyro.distributions as dist
 from pyro.nn import PyroModule, PyroSample
 
-from generate_time_series import load_logistic_map_time_series
+from generate_time_series import load_logistic_map_time_series, load_garch_time_series
 from datasets import chop_time_series_into_chunks, split_chunks_into_windows_and_targets
 
 
@@ -141,13 +141,37 @@ def posterior_predictive_forward_and_backward(
 
 
 def train_logistic():
+    # posterior_predictive_forward_and_backward(
+    #     train_ts=load_logistic_map_time_series(2000),
+    #     test_ts=torch.linspace(0.001, 0.999, 1000).reshape(-1, 1),
+    #     save_dir="20230724_preds/logistics1",
+    #     window_len=1)
+
     posterior_predictive_forward_and_backward(
         train_ts=load_logistic_map_time_series(2000),
         test_ts=torch.linspace(0.001, 0.999, 1000).reshape(-1, 1),
-        save_dir="20230724_preds/logistics1",
-        window_len=1)
+        save_dir="20230724_preds/logistics2",
+        window_len=2)
+
+
+def train_garch():
+    torch.manual_seed(42)
+    test_ts = torch.rand((1000, 3))
+
+    posterior_predictive_forward_and_backward(
+        train_ts=load_garch_time_series(2000, coef_alpha=0.1),
+        test_ts=0.3 * test_ts,
+        save_dir="20230724_preds/garch01",
+        window_len=3)
+
+    posterior_predictive_forward_and_backward(
+        train_ts=load_garch_time_series(2000, coef_alpha=0.7),
+        test_ts=2. * test_ts,
+        save_dir="20230724_preds/garch02",
+        window_len=3)
 
 
 if __name__ == "__main__":
     test_model_output_dimensions()
+    train_garch()
     train_logistic()
