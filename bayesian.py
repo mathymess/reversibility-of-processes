@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import numpy.typing
 from typing import Tuple
 import torch
@@ -119,8 +120,7 @@ def posterior_predictive_forward_and_backward(
         save_dir: str,
         window_len: int = 1,
         num_samples: int = 100) -> Tuple[torch.tensor, torch.tensor]:
-    if os.path.isdir(save_dir):
-        raise FileExistsError(f"'{save_dir}' exists, will not overwrite")
+    os.makedirs(save_dir, exist_ok=False)
 
     predictive_f = get_samples_from_posterior_predictive(
             *prepare_simple_1d_time_series(train_ts, window_len), num_samples)
@@ -141,37 +141,38 @@ def posterior_predictive_forward_and_backward(
 
 
 def train_logistic():
-    # posterior_predictive_forward_and_backward(
-    #     train_ts=load_logistic_map_time_series(2000),
-    #     test_ts=torch.linspace(0.001, 0.999, 1000).reshape(-1, 1),
-    #     save_dir="20230724_preds/logistics1",
-    #     window_len=1)
+    posterior_predictive_forward_and_backward(
+        train_ts=load_logistic_map_time_series(2000),
+        test_ts=np.linspace(0.001, 0.999, 100).reshape(-1, 1),
+        save_dir="20230724_preds/logistics1",
+        window_len=1)
 
     posterior_predictive_forward_and_backward(
         train_ts=load_logistic_map_time_series(2000),
-        test_ts=torch.linspace(0.001, 0.999, 1000).reshape(-1, 1),
+        test_ts=np.linspace(0.001, 0.999, 100).reshape(-1, 1),
         save_dir="20230724_preds/logistics2",
         window_len=2)
 
 
 def train_garch():
     torch.manual_seed(42)
-    test_ts = torch.rand((1000, 3))
+    test_ts = numpy.random.uniform(0, 1, size=(1000, 1))
 
-    posterior_predictive_forward_and_backward(
-        train_ts=load_garch_time_series(2000, coef_alpha=0.1),
-        test_ts=0.3 * test_ts,
-        save_dir="20230724_preds/garch01",
-        window_len=3)
+    # posterior_predictive_forward_and_backward(
+    #     train_ts=load_garch_time_series(2000, coef_alpha=0.1),
+    #     test_ts=0.3 * test_ts,
+    #     save_dir="20230724_preds/garch01",
+    #     window_len=3)
 
     posterior_predictive_forward_and_backward(
         train_ts=load_garch_time_series(2000, coef_alpha=0.7),
         test_ts=2. * test_ts,
         save_dir="20230724_preds/garch02",
-        window_len=3)
+        window_len=3,
+        num_samples=20)
 
 
 if __name__ == "__main__":
     test_model_output_dimensions()
     train_garch()
-    train_logistic()
+    # train_logistic()
