@@ -18,19 +18,15 @@ NDArray = numpy.typing.NDArray[numpy.floating]
 
 class BayesianThreeFCLayers(PyroModule):
     def __init__(self, window_len: int, datapoint_size: int = 1, target_len: int = 1,
-                 hidden_layer1_size: int = 10, hidden_layer2_size: int = 10,
-                 prior_scale: float = 10.):
-        super().__init__()
+                 hidden_size: int = 10, prior_scale: float = 10.):
         if datapoint_size != 1 or target_len != 1:
             raise NotImplementedError("I didn't figure out how to support "
-                                      "tensors of sophisticated shape")
+                                      "target tensors of sophisticated shape")
+        super().__init__()
 
-        self.window_len: int = window_len
-        self.datapoint_size: int = datapoint_size
-        self.target_len: int = target_len
-
-        self.hidden_layer1_size = hidden_layer1_size
-        self.hidden_layer2_size = hidden_layer2_size
+        self.input_size: int = window_len * datapoint_size
+        self.hidden_size: int = hidden_size
+        self.output_size: int = target_len * datapoint_size
 
         self._init_layers(prior_scale)
 
@@ -38,9 +34,9 @@ class BayesianThreeFCLayers(PyroModule):
         self.to(device=device)
 
     def _init_layers(self, prior_scale: float):
-        size1 = (self.window_len * self.datapoint_size, self.hidden_layer1_size)
-        size2 = (self.hidden_layer1_size, self.hidden_layer2_size)
-        size3 = (self.hidden_layer2_size, self.target_len * self.datapoint_size)
+        size1 = (self.input_size, self.hidden_size)
+        size2 = (self.hidden_size, self.hidden_size)
+        size3 = (self.hidden_size, self.output_size)
 
         self.fc1 = PyroModule[nn.Linear](*size1)
         self.relu1 = nn.ReLU()
@@ -57,28 +53,31 @@ class BayesianThreeFCLayers(PyroModule):
         self.fc3.bias = PyroSample(dist.Normal(0., prior_scale).expand(size3[-1:]).to_event(1))
 
     def forward(self, windows: torch.tensor, y: torch.tensor = None) -> torch.tensor:
-        # assert windows.shape[-1] == self.window_len * self.datapoint_size
-        sigma = pyro.sample("sigma", dist.Uniform(0., 5.))
+        assert windows.ndim in (1, 2)
+        assert windows.shape[-1] == self.input_size
+
+        sigma = pyro.sample("sigma", dist.Gamma(.5, 1))  # Infer the response noise
 
         ret = windows
         ret = self.relu1(self.fc1(ret))
         ret = self.relu2(self.fc2(ret))
         ret = self.fc3(ret)
-        ret = ret.squeeze(-1)
 
         # Just copying this from the tutorial, I have no idea what it does.
         # https://pyro.ai/examples/bayesian_regression.html
         with pyro.plate("data", windows.shape[0]):
-            obs = pyro.sample("obs", dist.Normal(ret, sigma), obs=y)
+            # TODO: .squeeze(-1) is a hack, but otherwise everything fails if y or ret are not 1D
+            obs = pyro.sample("obs", dist.Normal(ret.squeeze(-1), sigma * sigma),
+                              obs=None if y is None else y.squeeze(-1))
 
         return ret
 
 
 def test_model_output_dimensions() -> None:
     model = BayesianThreeFCLayers(window_len=2, datapoint_size=1, target_len=1)
-    batch = torch.tensor([[1., 2.], [7., 8.]])
+    batch = torch.tensor([[1., 2.], [3., 4.]])
     targets = model(batch)
-    assert targets.ndim == 1 and targets.shape == (2,)
+    assert targets.ndim == 2 and targets.shape == (2, 1), f"targets.shape={targets.shape}"
     print("test_model_output_dimensions passed successfully!")
 
 
@@ -174,5 +173,5 @@ def train_garch():
 
 if __name__ == "__main__":
     test_model_output_dimensions()
-    train_garch()
+    # train_garch()
     # train_logistic()
