@@ -125,25 +125,27 @@ def posterior_predictive_forward_and_backward(
             *prepare_simple_1d_time_series(train_ts, window_len), num_samples)
     torch.save(predictive_f, os.path.join(save_dir, "predictive.forward.torch"))
     print("Saved forward predictive for", save_dir)
+    pyro.clear_param_store()  # Not sure this is necessary, being cautious.
 
     predictive_b = get_samples_from_posterior_predictive(
             *prepare_simple_1d_time_series(train_ts, window_len, reverse=True), num_samples)
     torch.save(predictive_b, os.path.join(save_dir, "predictive.backward.torch"))
     print("Saved backward predictive for", save_dir)
+    pyro.clear_param_store()  # Not sure this is necessary, being cautious.
 
     return predictive_f, predictive_b
 
 
 def train_logistic():
     posterior_predictive_forward_and_backward(
-        train_ts=load_logistic_map_time_series(2000),
-        save_dir="20230724_preds/logistics1",
+        train_ts=load_logistic_map_time_series(1500),
+        save_dir="20230724_preds/logistics3",
         window_len=1)
 
-    posterior_predictive_forward_and_backward(
-        train_ts=load_logistic_map_time_series(2000),
-        save_dir="20230724_preds/logistics2",
-        window_len=2)
+    # posterior_predictive_forward_and_backward(
+    #     train_ts=load_logistic_map_time_series(2000),
+    #     save_dir="20230724_preds/logistics2",
+    #     window_len=2)
 
 
 def train_garch():
@@ -162,4 +164,4 @@ def train_garch():
 if __name__ == "__main__":
     test_model_output_dimensions()
     train_logistic()
-    train_garch()
+    # train_garch()
