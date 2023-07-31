@@ -1,6 +1,9 @@
 import os
+import numpy as np
 import numpy.typing
 from typing import Tuple
+import matplotlib.pyplot as plt
+
 import torch
 import torch.nn as nn
 
@@ -14,6 +17,46 @@ from datasets import chop_time_series_into_chunks, split_chunks_into_windows_and
 
 
 NDArray = numpy.typing.NDArray[numpy.floating]
+
+
+def prepare_simple_1d_time_series(ts: NDArray,
+                                  window_len: int,
+                                  take_each_nth_chunk: int = 1,
+                                  reverse: bool = False) -> Tuple[torch.tensor, torch.tensor]:
+    chunks = chop_time_series_into_chunks(time_series=ts,
+                                          chunk_len=window_len + 1,
+                                          take_each_nth_chunk=take_each_nth_chunk,
+                                          reverse=reverse)
+    windows, targets = split_chunks_into_windows_and_targets(chunks, target_len=1)
+
+    windows = windows.squeeze(-1)
+    targets = targets.squeeze(-1)
+
+    windows = torch.from_numpy(windows).float()
+    targets = torch.from_numpy(targets).float()
+    return windows, targets
+
+
+class BayesTrainData:
+    def __init__(self, ts: NDArray, window_len: int = 1, noise_std: float = 0.1):
+        self.ts = ts
+
+        self.noisy_ts = ts + np.random.normal(scale=noise_std, size=ts.shape)
+
+        self.windows_f, self.targets_f = prepare_simple_1d_time_series(self.noisy_ts,
+                                                                       window_len)
+        self.windows_b, self.targets_b = prepare_simple_1d_time_series(self.noisy_ts,
+                                                                       window_len,
+                                                                       reverse=True)
+
+
+def plot_with_noise(ts: NDArray, noise_std: float = 1.):
+    noisy_ts = ts + np.random.normal(scale=noise_std, size=ts.shape)
+    plt.close()
+    plt.plot(ts, "o", alpha=0.5)
+    plt.plot(noisy_ts, "o")
+    plt.grid()
+    plt.show()
 
 
 class BayesianThreeFCLayers(PyroModule):
@@ -82,24 +125,6 @@ def test_model_output_dimensions() -> None:
     print("test_model_output_dimensions passed successfully!")
 
 
-def prepare_simple_1d_time_series(ts: NDArray,
-                                  window_len: int,
-                                  take_each_nth_chunk: int = 1,
-                                  reverse: bool = False) -> Tuple[torch.tensor, torch.tensor]:
-    chunks = chop_time_series_into_chunks(time_series=ts,
-                                          chunk_len=window_len + 1,
-                                          take_each_nth_chunk=take_each_nth_chunk,
-                                          reverse=reverse)
-    windows, targets = split_chunks_into_windows_and_targets(chunks, target_len=1)
-
-    windows = windows.squeeze(-1)
-    targets = targets.squeeze(-1)
-
-    windows = torch.from_numpy(windows).float()
-    targets = torch.from_numpy(targets).float()
-    return windows, targets
-
-
 def get_samples_from_posterior_predictive(windows: torch.tensor,
                                           targets: torch.tensor,
                                           num_samples: int = 100) -> Predictive:
@@ -139,42 +164,33 @@ def posterior_predictive_forward_and_backward_impl(
 
 
 def posterior_predictive_forward_and_backward(
-        train_ts: NDArray,
+        train_d: BayesTrainData,
         save_dir: str,
-        window_len: int = 1,
         num_samples: int = 100) -> Tuple[Predictive, Predictive]:
-    windows_f, targets_f = prepare_simple_1d_time_series(train_ts, window_len)
-    windows_b, targets_b = prepare_simple_1d_time_series(train_ts, window_len, reverse=True)
-    return posterior_predictive_forward_and_backward_impl(windows_f=windows_f,
-                                                          targets_f=targets_f,
-                                                          windows_b=windows_b,
-                                                          targets_b=targets_b,
+    return posterior_predictive_forward_and_backward_impl(windows_f=train_d.windows_f,
+                                                          targets_f=train_d.targets_f,
+                                                          windows_b=train_d.windows_b,
+                                                          targets_b=train_d.targets_b,
                                                           save_dir=save_dir,
                                                           num_samples=num_samples)
 
 
 def train_logistic():
     posterior_predictive_forward_and_backward(
-        train_ts=load_logistic_map_time_series(1500),
-        save_dir="20230724_preds/logistics3",
-        window_len=1)
-
-    # posterior_predictive_forward_and_backward(
-    #     train_ts=load_logistic_map_time_series(2000),
-    #     save_dir="20230724_preds/logistics2",
-    #     window_len=2)
+        train_d=BayesTrainData(load_logistic_map_time_series(1500), window_len=1),
+        save_dir="20230724_preds/logistics4")
 
 
 def train_garch():
     posterior_predictive_forward_and_backward(
-        train_ts=load_garch_time_series(2000, coef_alpha=0.1, rng_seed=42),
-        save_dir="20230724_preds/garch01",
-        window_len=3)
+        train_d=BayesTrainData(load_garch_time_series(2000, coef_alpha=0.1, rng_seed=42),
+                               window_len=3),
+        save_dir="20230724_preds/garch01")
 
     posterior_predictive_forward_and_backward(
-        train_ts=load_garch_time_series(2000, coef_alpha=0.7, rng_seed=42),
-        save_dir="20230724_preds/garch02",
-        window_len=3)
+        train_d=BayesTrainData(load_garch_time_series(2000, coef_alpha=0.7, rng_seed=42),
+                               window_len=3),
+        save_dir="20230724_preds/garch02")
 
 
 if __name__ == "__main__":
