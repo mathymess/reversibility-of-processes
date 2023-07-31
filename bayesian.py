@@ -50,6 +50,16 @@ class BayesTrainData:
                                                                        reverse=True)
 
 
+def save_train_data_to_drive(train_d: BayesTrainData, save_dir: str) -> None:
+    os.makedirs(save_dir, exist_ok=False)
+    torch.save(train_d.ts, os.path.join(save_dir, "ts.torch"))
+    torch.save(train_d.noisy_ts, os.path.join(save_dir, "noisy_ts.torch"))
+    torch.save(train_d.windows_f, os.path.join(save_dir, "windows_f.torch"))
+    torch.save(train_d.targets_f, os.path.join(save_dir, "targets_f.torch"))
+    torch.save(train_d.windows_b, os.path.join(save_dir, "windows_b.torch"))
+    torch.save(train_d.targets_b, os.path.join(save_dir, "targets_b.torch"))
+
+
 def plot_with_noise(ts: NDArray, noise_std: float = 1.):
     noisy_ts = ts + np.random.normal(scale=noise_std, size=ts.shape)
     plt.close()
@@ -148,18 +158,9 @@ def posterior_predictive_forward_and_backward_impl(
         targets_f: torch.tensor,
         windows_b: torch.tensor,
         targets_b: torch.tensor,
-        save_dir: str,
         num_samples: int = 100) -> Tuple[Predictive, Predictive]:
-    os.makedirs(save_dir, exist_ok=False)
-
     predictive_f = get_samples_from_posterior_predictive(windows_f, targets_f, num_samples)
-    torch.save(predictive_f, os.path.join(save_dir, "predictive.forward.torch"))
-    print("Saved forward predictive for", save_dir)
-
     predictive_b = get_samples_from_posterior_predictive(windows_b, targets_b, num_samples)
-    torch.save(predictive_b, os.path.join(save_dir, "predictive.backward.torch"))
-    print("Saved backward predictive for", save_dir)
-
     return predictive_f, predictive_b
 
 
@@ -167,12 +168,16 @@ def posterior_predictive_forward_and_backward(
         train_d: BayesTrainData,
         save_dir: str,
         num_samples: int = 100) -> Tuple[Predictive, Predictive]:
-    return posterior_predictive_forward_and_backward_impl(windows_f=train_d.windows_f,
-                                                          targets_f=train_d.targets_f,
-                                                          windows_b=train_d.windows_b,
-                                                          targets_b=train_d.targets_b,
-                                                          save_dir=save_dir,
-                                                          num_samples=num_samples)
+    save_train_data_to_drive(train_d, save_dir)
+    predictive_f, predictive_b = posterior_predictive_forward_and_backward_impl(
+        windows_f=train_d.windows_f,
+        targets_f=train_d.targets_f,
+        windows_b=train_d.windows_b,
+        targets_b=train_d.targets_b,
+        num_samples=num_samples)
+    torch.save(predictive_f, os.path.join(save_dir, "predictive.forward.torch"))
+    torch.save(predictive_b, os.path.join(save_dir, "predictive.backward.torch"))
+    return predictive_f, predictive_b
 
 
 def train_logistic():
