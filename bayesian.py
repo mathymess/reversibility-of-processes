@@ -7,6 +7,7 @@ import torch.nn as nn
 import pyro
 import pyro.distributions as dist
 from pyro.nn import PyroModule, PyroSample
+from pyro.infer import Predictive
 
 from generate_time_series import load_logistic_map_time_series, load_garch_time_series
 from datasets import chop_time_series_into_chunks, split_chunks_into_windows_and_targets
@@ -84,7 +85,7 @@ def test_model_output_dimensions() -> None:
 def prepare_simple_1d_time_series(ts: NDArray,
                                   window_len: int,
                                   take_each_nth_chunk: int = 1,
-                                  reverse: bool = False) -> Tuple[NDArray, NDArray]:
+                                  reverse: bool = False) -> Tuple[torch.tensor, torch.tensor]:
     chunks = chop_time_series_into_chunks(time_series=ts,
                                           chunk_len=window_len + 1,
                                           take_each_nth_chunk=take_each_nth_chunk,
@@ -101,38 +102,55 @@ def prepare_simple_1d_time_series(ts: NDArray,
 
 def get_samples_from_posterior_predictive(windows: torch.tensor,
                                           targets: torch.tensor,
-                                          num_samples: int = 100) -> pyro.infer.Predictive:
+                                          num_samples: int = 100) -> Predictive:
     assert windows.ndim == targets.ndim == 2
     assert windows.shape[0] == targets.shape[0]
+
+    pyro.clear_param_store()  # Not sure this is necessary, being cautious.
 
     model = BayesianThreeFCLayers(window_len=windows.shape[-1], target_len=1, datapoint_size=1)
     mcmc = pyro.infer.MCMC(pyro.infer.NUTS(model, jit_compile=False), num_samples)
     mcmc.run(windows, targets)
-    predictive = pyro.infer.Predictive(model=model, posterior_samples=mcmc.get_samples())
+    predictive = Predictive(model=model, posterior_samples=mcmc.get_samples())
+
+    pyro.clear_param_store()  # Not sure this is necessary, being cautious.
 
     return predictive
+
+
+def posterior_predictive_forward_and_backward_impl(
+        windows_f: torch.tensor,
+        targets_f: torch.tensor,
+        windows_b: torch.tensor,
+        targets_b: torch.tensor,
+        save_dir: str,
+        num_samples: int = 100) -> Tuple[Predictive, Predictive]:
+    os.makedirs(save_dir, exist_ok=False)
+
+    predictive_f = get_samples_from_posterior_predictive(windows_f, targets_f, num_samples)
+    torch.save(predictive_f, os.path.join(save_dir, "predictive.forward.torch"))
+    print("Saved forward predictive for", save_dir)
+
+    predictive_b = get_samples_from_posterior_predictive(windows_b, targets_b, num_samples)
+    torch.save(predictive_b, os.path.join(save_dir, "predictive.backward.torch"))
+    print("Saved backward predictive for", save_dir)
+
+    return predictive_f, predictive_b
 
 
 def posterior_predictive_forward_and_backward(
         train_ts: NDArray,
         save_dir: str,
         window_len: int = 1,
-        num_samples: int = 100) -> Tuple[torch.tensor, torch.tensor]:
-    os.makedirs(save_dir, exist_ok=False)
-
-    predictive_f = get_samples_from_posterior_predictive(
-            *prepare_simple_1d_time_series(train_ts, window_len), num_samples)
-    torch.save(predictive_f, os.path.join(save_dir, "predictive.forward.torch"))
-    print("Saved forward predictive for", save_dir)
-    pyro.clear_param_store()  # Not sure this is necessary, being cautious.
-
-    predictive_b = get_samples_from_posterior_predictive(
-            *prepare_simple_1d_time_series(train_ts, window_len, reverse=True), num_samples)
-    torch.save(predictive_b, os.path.join(save_dir, "predictive.backward.torch"))
-    print("Saved backward predictive for", save_dir)
-    pyro.clear_param_store()  # Not sure this is necessary, being cautious.
-
-    return predictive_f, predictive_b
+        num_samples: int = 100) -> Tuple[Predictive, Predictive]:
+    windows_f, targets_f = prepare_simple_1d_time_series(train_ts, window_len)
+    windows_b, targets_b = prepare_simple_1d_time_series(train_ts, window_len, reverse=True)
+    return posterior_predictive_forward_and_backward_impl(windows_f=windows_f,
+                                                          targets_f=targets_f,
+                                                          windows_b=windows_b,
+                                                          targets_b=targets_b,
+                                                          save_dir=save_dir,
+                                                          num_samples=num_samples)
 
 
 def train_logistic():
