@@ -1,5 +1,4 @@
 import os
-import numpy as np
 import numpy.typing
 from typing import Tuple
 import torch
@@ -149,14 +148,13 @@ def train_logistic():
 
 
 def train_garch():
-    np.random.seed(42)  # reproducible generation of GARCH time series
     posterior_predictive_forward_and_backward(
-        train_ts=load_garch_time_series(2000, coef_alpha=0.1),
+        train_ts=load_garch_time_series(2000, coef_alpha=0.1, rng_seed=42),
         save_dir="20230724_preds/garch01",
         window_len=3)
 
     posterior_predictive_forward_and_backward(
-        train_ts=load_garch_time_series(2000, coef_alpha=0.7),
+        train_ts=load_garch_time_series(2000, coef_alpha=0.7, rng_seed=42),
         save_dir="20230724_preds/garch02",
         window_len=3)
 

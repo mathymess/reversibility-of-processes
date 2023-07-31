@@ -344,8 +344,12 @@ def load_arnold_map_time_series(length: int, x_initial: float = 0.699, y_initial
 
 
 def load_arch_time_series(length: int, coef_alpha: float = 1,
-                          x_initial: Tuple[float, float, float] = (0.8, 0.9, 0.95)):
+                          x_initial: Tuple[float, float, float] = (0.8, 0.9, 0.95),
+                          rng_seed: Optional[int] = None):
     # Autoregressive Conditional Heteroskedacity model
+    if rng_seed is not None:
+        np.random.seed(rng_seed)
+
     x = np.zeros(length)
     x[:3] = x_initial
 
@@ -360,8 +364,12 @@ def load_arch_time_series(length: int, coef_alpha: float = 1,
 
 def load_garch_time_series(length: int, coef_alpha: float = 0.5,
                            x_initial: Tuple[float, float, float] = (0.1, 0.1, 0.1),
-                           sigma_squared_initial: Tuple[float, float, float] = (0.0, 0.0, 0.0)):
+                           sigma_squared_initial: Tuple[float, float, float] = (0.0, 0.0, 0.0),
+                           rng_seed: Optional[int] = None):
     # Generalized Autoregressive Conditional Heteroskedacity model
+    if rng_seed is not None:
+        np.random.seed(rng_seed)
+
     x = np.zeros(length)
     x[:3] = x_initial
 
