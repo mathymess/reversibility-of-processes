@@ -197,5 +197,5 @@ def train_garch():
 
 if __name__ == "__main__":
     test_model_output_dimensions()
-    train_logistic()
+    # train_logistic()
     train_garch()
