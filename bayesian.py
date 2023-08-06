@@ -120,7 +120,7 @@ class BayesianThreeFCLayers(PyroModule):
         # https://pyro.ai/examples/bayesian_regression.html
         with pyro.plate("data", windows.shape[0]):
             obs = pyro.sample("obs",  # noqa: F841
-                              dist.Normal(ret, sigma * sigma),
+                              dist.Normal(ret, sigma * sigma).to_event(1),
                               obs=y)
 
         return ret
@@ -183,7 +183,7 @@ def train_logistic():
     posterior_predictive_forward_and_backward(
         train_d=BayesTrainData(load_logistic_map_time_series(1500),
                                window_len=1, noise_std=0.),
-        save_dir="20230724_preds/logistics10", num_samples=60)
+        save_dir="20230724_preds/logistics11", num_samples=60)
 
 
 def train_garch():
