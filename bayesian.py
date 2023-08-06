@@ -176,6 +176,24 @@ def posterior_predictive_forward_and_backward(
     return predictive_f, predictive_b
 
 
+class ExperimentResults:
+    def __init__(self, save_dir: str):
+        self.save_dir = save_dir
+
+        self.windows_f = torch.load(os.path.join(save_dir, "windows_f.torch"))
+        self.targets_f = torch.load(os.path.join(save_dir, "targets_f.torch"))
+        self.predictive_f = torch.load(os.path.join(save_dir, "predictive.forward.torch"))
+        self.pred_obs_f = self.predictive_f(self.windows_f)["obs"]
+
+        self.windows_b = torch.load(os.path.join(save_dir, "windows_b.torch"))
+        self.targets_b = torch.load(os.path.join(save_dir, "targets_b.torch"))
+        self.predictive_b = torch.load(os.path.join(save_dir, "predictive.backward.torch"))
+        self.pred_obs_b = self.predictive_b(self.windows_b)["obs"]
+
+        self.ts = torch.load(os.path.join(save_dir, "ts.torch"))
+        self.noisy_ts = torch.load(os.path.join(save_dir, "noisy_ts.torch"))
+
+
 def train_logistic():
     posterior_predictive_forward_and_backward(
         train_d=BayesTrainData(load_logistic_map_time_series(1500),
