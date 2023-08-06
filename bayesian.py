@@ -119,10 +119,9 @@ class BayesianThreeFCLayers(PyroModule):
         # Just copying this from the tutorial, I have no idea what it does.
         # https://pyro.ai/examples/bayesian_regression.html
         with pyro.plate("data", windows.shape[0]):
-            # TODO: .squeeze(-1) is a hack, but otherwise everything fails if y or ret are not 1D
             obs = pyro.sample("obs",  # noqa: F841
-                              dist.Normal(ret.squeeze(-1), sigma * sigma),
-                              obs=None if y is None else y.squeeze(-1))
+                              dist.Normal(ret, sigma * sigma).to_event(1),
+                              obs=y)
 
         return ret
 
@@ -183,7 +182,7 @@ def posterior_predictive_forward_and_backward(
 def train_logistic():
     posterior_predictive_forward_and_backward(
         train_d=BayesTrainData(load_logistic_map_time_series(1500), window_len=1),
-        save_dir="20230724_preds/logistics4")
+        save_dir="20230724_preds/logistics6")
 
 
 def train_garch():
