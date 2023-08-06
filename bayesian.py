@@ -179,23 +179,23 @@ def posterior_predictive_forward_and_backward(
 def train_logistic():
     posterior_predictive_forward_and_backward(
         train_d=BayesTrainData(load_logistic_map_time_series(1500),
-                               window_len=1, noise_std=0.),
-        save_dir="20230724_preds/logistics12", num_samples=60)
+                               window_len=1, noise_std=0.05),
+        save_dir="20230724_preds/logistics14", num_samples=60)
 
 
 def train_garch():
     posterior_predictive_forward_and_backward(
         train_d=BayesTrainData(load_garch_time_series(2000, coef_alpha=0.1, rng_seed=42),
-                               window_len=3),
-        save_dir="20230724_preds/garch01")
+                               window_len=3, noise_std=0.),
+        save_dir="20230724_preds/garch03")
 
-    posterior_predictive_forward_and_backward(
-        train_d=BayesTrainData(load_garch_time_series(2000, coef_alpha=0.7, rng_seed=42),
-                               window_len=3),
-        save_dir="20230724_preds/garch02")
+    # posterior_predictive_forward_and_backward(
+    #     train_d=BayesTrainData(load_garch_time_series(2000, coef_alpha=0.7, rng_seed=42),
+    #                            window_len=3),
+    #     save_dir="20230724_preds/garch02")
 
 
 if __name__ == "__main__":
     test_model_output_dimensions()
     train_logistic()
-    # train_garch()
+    train_garch()
