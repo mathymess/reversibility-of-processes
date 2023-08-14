@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import numpy.typing
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Dict
 import matplotlib.pyplot as plt
 
 import torch
@@ -11,6 +11,7 @@ import pyro
 import pyro.distributions as dist
 from pyro.nn import PyroModule, PyroSample
 from pyro.infer import Predictive
+from pyro.contrib import forecast as pyro_metric
 
 from generate_time_series import load_logistic_map_time_series, load_garch_time_series
 from datasets import chop_time_series_into_chunks, split_chunks_into_windows_and_targets
@@ -229,6 +230,19 @@ def plot_predictions(true: torch.Tensor,
         fig.show()
 
     return fig, ax
+
+
+def quality_metrics(preds: torch.Tensor, truth: torch.Tensor) -> Dict:
+    assert preds.ndim == truth.ndim + 1 == 3, f"preds.shape={preds.shape}, truth.shape={truth.shape}"
+
+    metrics = {}
+    metrics["mae"] = pyro_metric.eval_mae(preds, truth)
+    metrics["rmse"] = pyro_metric.eval_mae(preds, truth)
+    metrics["crps"] = pyro_metric.eval_crps(preds, truth)
+    metrics["mean_std"] = preds.std(axis=0).mean().cpu().item()
+    metrics["mse_from_all"] = ((truth - preds) ** 2).mean().cpu().item()
+
+    return metrics
 
 
 def train_logistic():
