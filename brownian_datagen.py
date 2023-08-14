@@ -16,14 +16,19 @@ class BrownianDatagen:
         self.γ = γ  # Damping rate
         self.k = k  # Strength of the potential
         self.λ_τ = λ_τ  # Centre of the potential moves from 0 to λ_τ
-        self.τ = τ  # Time frame is from 0 to τ
+        self.τ = τ  # Time varies from 0 to τ
+
+    def energy(self, x, λ):
+        return 0.5 * self.k * (x-λ) ** 2
 
     def generate(self, numParticles: int = 1000, numSteps: int = 99,
-                 rng_seed: Optional[int] = 42, backward: bool = False) -> NDArray:
+                 rng_seed: Optional[int] = 42, backward: bool = False) -> Tuple[NDArray, NDArray]:
         if rng_seed is not None:
             np.random.seed(rng_seed)
 
         δt = self.τ / (numSteps + 1)
+        wList = np.zeros(numParticles)
+
         λs = np.linspace(0, self.λ_τ, numSteps + 1)
         xs = np.zeros((numParticles, numSteps + 1))
         xs[:, 0] = self.kBT / self.k * np.random.randn(numParticles)
@@ -36,12 +41,15 @@ class BrownianDatagen:
             xs[:, i+1] = (xs[:, i] * (1 - self.k / self.γ * δt)
                           + self.k / self.γ * δt * λs[i if backward else i + 1]
                           + ΔW)
-        return xs[:, ::-1] if backward else xs
+            x_en = xs[:, i+1 if backward else i]
+            wList += self.energy(x_en, λs[i+1]) - self.energy(x_en, λs[i])
+
+        return (xs[:, ::-1] if backward else xs, wList)
 
     def windows_targets(self,
                         window_len: int,
                         backward: bool = False, **kwargs) -> Tuple[NDArray, NDArray]:
-        traj = self.generate(backward=backward, **kwargs)
+        traj, _ = self.generate(backward=backward, **kwargs)
         window_list = []
         target_list = []
         for pt in traj:
@@ -70,8 +78,8 @@ if __name__ == "__main__":
         plt.show()
 
     b = BrownianDatagen(kBT=0.03, k=3., γ=2.)
-    plot_trajectories(b.generate())
-    plot_trajectories(b.generate(backward=True))
+    plot_trajectories(b.generate()[0])
+    plot_trajectories(b.generate(backward=True)[0])
 
     w, t = b.windows_targets(3, numParticles=50)
     print("windows.shape=", w.shape, "targets.shape=", t.shape)
