@@ -10,47 +10,38 @@ NDArray = numpy.typing.NDArray[np.floating]
 
 
 class BrownianDatagen:
-    def __init__(self, kBT: float = 0.03, γ: float = 3., k: float = 2.):
-        self.kBT = kBT
-        self.γ = γ
-        self.k = k
+    def __init__(self, kBT: float = 0.03, γ: float = 3., k: float = 2.,
+                 λ_τ: float = 1, τ: float = 1):
+        self.kBT = kBT  # Temperature
+        self.γ = γ  # Damping rate
+        self.k = k  # Strength of the potential
+        self.λ_τ = λ_τ  # Centre of the potential moves from 0 to λ_τ
+        self.τ = τ  # Time frame is from 0 to τ
 
-    def generate_forward(self, numParticles: int = 1000, numSteps: int = 99,
-                         λ_τ: float = 1, τ: float = 1, rng_seed: Optional[int] = 42) -> NDArray:
+    def generate(self, numParticles: int = 1000, numSteps: int = 99,
+                 rng_seed: Optional[int] = 42, backward: bool = False) -> NDArray:
         if rng_seed is not None:
             np.random.seed(rng_seed)
-        λs = np.linspace(0, λ_τ, numSteps + 1)
+
+        δt = self.τ / (numSteps + 1)
+        λs = np.linspace(0, self.λ_τ, numSteps + 1)
         xs = np.zeros((numParticles, numSteps + 1))
         xs[:, 0] = self.kBT / self.k * np.random.randn(numParticles)
-        δt = τ / (numSteps + 1)
+        if backward:
+            λs = λs[::-1]
+            xs[:, 0] += λs[0]
+
         for i in range(numSteps):
             ΔW = np.sqrt(2 * self.kBT / self.γ * δt) * np.random.randn(numParticles)
             xs[:, i+1] = (xs[:, i] * (1 - self.k / self.γ * δt)
-                          + self.k / self.γ * λs[i + 1] * δt
+                          + self.k / self.γ * δt * λs[i if backward else i + 1]
                           + ΔW)
-        return xs
-
-    def generate_backward(self, numParticles: int = 1000, numSteps: int = 99,
-                          λ_τ: float = 1, τ: float = 1,
-                          rng_seed: Optional[int] = None) -> NDArray:
-        if rng_seed is not None:
-            np.random.seed(rng_seed)
-        λs = np.linspace(0, λ_τ, numSteps + 1)[::-1]
-        xs = np.zeros((numParticles, numSteps+1))
-        xs[:, 0] = self.kBT / self.k * np.random.randn(numParticles) + λs[0]
-        δt = τ / (numSteps + 1)
-        for i in range(numSteps):
-            ΔW = np.sqrt(2 * self.kBT / self.γ * δt) * np.random.randn(numParticles)
-            xs[:, i+1] = (xs[:, i] * (1 - self.k / self.γ * δt)
-                          + self.k / self.γ * λs[i] * δt
-                          + ΔW)
-
-        return xs[:, ::-1]
+        return xs[:, ::-1] if backward else xs
 
     def windows_targets(self,
                         window_len: int,
                         backward: bool = False, **kwargs) -> Tuple[NDArray, NDArray]:
-        traj = self.generate_backward(**kwargs) if backward else self.generate_forward(**kwargs)
+        traj = self.generate(backward=backward, **kwargs)
         window_list = []
         target_list = []
         for pt in traj:
@@ -79,8 +70,8 @@ if __name__ == "__main__":
         plt.show()
 
     b = BrownianDatagen(kBT=0.03, k=3., γ=2.)
-    plot_trajectories(b.generate_forward())
-    plot_trajectories(b.generate_backward())
+    plot_trajectories(b.generate())
+    plot_trajectories(b.generate(backward=True))
 
     w, t = b.windows_targets(3, numParticles=50)
     print("windows.shape=", w.shape, "targets.shape=", t.shape)
