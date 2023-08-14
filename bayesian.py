@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import numpy.typing
-from typing import Tuple
+from typing import Tuple, Optional
 import matplotlib.pyplot as plt
 
 import torch
@@ -192,6 +192,43 @@ class ExperimentResults:
 
         self.ts = torch.load(os.path.join(save_dir, "ts.torch"))
         self.noisy_ts = torch.load(os.path.join(save_dir, "noisy_ts.torch"))
+
+
+def plot_predictions(true: torch.Tensor,
+                     pred_all: Optional[torch.Tensor] = None,
+                     pred_mean: Optional[torch.Tensor] = None,
+                     pred_std: Optional[torch.Tensor] = None,
+                     show: bool = False,
+                     title: Optional[str] = None) -> plt.Axes:
+    fig, ax = plt.subplots()
+
+    if pred_all is not None:
+        for pred_onedraw in torch.stack(list(pred_all)).T:
+            ax.plot(pred_onedraw, "o-", linewidth=1, markersize=1,
+                    alpha=0.2, color="green")
+
+    if pred_std is not None and pred_mean is not None:
+        top = (pred_mean + pred_std).squeeze(-1)
+        bottom = (pred_mean - pred_std).squeeze(-1)
+        print(top.shape, bottom.shape)
+        ax.fill_between(range(len(top)), bottom, top, alpha=0.6, color='#86cfac', zorder=5)
+
+    if pred_mean is not None:
+        ax.plot(pred_mean, 'ro-', linewidth=1, markersize=1, label="predictive mean")
+
+    ax.plot(true, 'bo-', linewidth=1, markersize=1, label="true value")
+
+    ax.set_xlabel("index")
+    ax.set_ylabel("target value")
+    ax.grid()
+    ax.legend()
+
+    if title is not None:
+        ax.set_title(title)
+    if show:
+        fig.show()
+
+    return fig, ax
 
 
 def train_logistic():

@@ -1,10 +1,12 @@
-import numpy as np
 from typing import Optional, Tuple
-import numpy.typing
-NDArray = numpy.typing.NDArray[np.floating]
 import matplotlib.pyplot as plt
+import numpy as np
+import numpy.typing
 
 from datasets import chop_time_series_into_chunks, split_chunks_into_windows_and_targets
+
+
+NDArray = numpy.typing.NDArray[np.floating]
 
 
 class BrownianDatagen:
@@ -14,31 +16,40 @@ class BrownianDatagen:
         self.k = k
 
     def generate_forward(self, numParticles: int = 1000, numSteps: int = 99,
-                         λ_τ: float = 1, τ: float = 1, rng_seed: int = 42) -> NDArray:
-        np.random.seed(rng_seed)
+                         λ_τ: float = 1, τ: float = 1, rng_seed: Optional[int] = 42) -> NDArray:
+        if rng_seed is not None:
+            np.random.seed(rng_seed)
         λs = np.linspace(0, λ_τ, numSteps + 1)
         xs = np.zeros((numParticles, numSteps + 1))
         xs[:, 0] = self.kBT / self.k * np.random.randn(numParticles)
-        δt =  τ / (numSteps + 1)
+        δt = τ / (numSteps + 1)
         for i in range(numSteps):
             ΔW = np.sqrt(2 * self.kBT / self.γ * δt) * np.random.randn(numParticles)
-            xs[:, i+1] = xs[:, i] * (1 - self.k / self.γ * δt) + self.k / self.γ * λs[i + 1] * δt + ΔW
+            xs[:, i+1] = (xs[:, i] * (1 - self.k / self.γ * δt)
+                          + self.k / self.γ * λs[i + 1] * δt
+                          + ΔW)
         return xs
 
     def generate_backward(self, numParticles: int = 1000, numSteps: int = 99,
-                          λ_τ: float = 1, τ: float = 1, rng_seed: int = 42) -> NDArray:
-        np.random.seed(rng_seed)
+                          λ_τ: float = 1, τ: float = 1,
+                          rng_seed: Optional[int] = None) -> NDArray:
+        if rng_seed is not None:
+            np.random.seed(rng_seed)
         λs = np.linspace(0, λ_τ, numSteps + 1)[::-1]
         xs = np.zeros((numParticles, numSteps+1))
         xs[:, 0] = self.kBT / self.k * np.random.randn(numParticles) + λs[0]
-        δt =  τ / (numSteps + 1)
+        δt = τ / (numSteps + 1)
         for i in range(numSteps):
             ΔW = np.sqrt(2 * self.kBT / self.γ * δt) * np.random.randn(numParticles)
-            xs[:, i+1] = xs[:, i] * (1 - self.k / self.γ * δt) + self.k / self.γ * λs[i] * δt + ΔW
+            xs[:, i+1] = (xs[:, i] * (1 - self.k / self.γ * δt)
+                          + self.k / self.γ * λs[i] * δt
+                          + ΔW)
 
         return xs[:, ::-1]
 
-    def windows_targets(self, window_len: int, backward: bool = False, **kwargs) -> Tuple[NDArray, NDArray]:
+    def windows_targets(self,
+                        window_len: int,
+                        backward: bool = False, **kwargs) -> Tuple[NDArray, NDArray]:
         traj = self.generate_backward(**kwargs) if backward else self.generate_forward(**kwargs)
         window_list = []
         target_list = []
@@ -57,7 +68,7 @@ class BrownianDatagen:
 if __name__ == "__main__":
     def plot_trajectories(traj: NDArray, title: Optional[str] = None) -> None:
         for p in traj[:10]:
-            plt.plot(p, "o-", linewidth=1, alpha=0.7) 
+            plt.plot(p, "o-", linewidth=1, alpha=0.7)
 
         plt.ylabel("coordinate of the particle")
         plt.xlabel("index")
