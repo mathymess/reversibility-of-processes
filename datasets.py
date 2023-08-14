@@ -63,6 +63,18 @@ def split_chunks_into_windows_and_targets(chunks: NDArray,
     return windows, targets
 
 
+def reverse_windows_targets(windows: NDArray, targets: NDArray) -> Tuple[NDArray, NDArray]:
+    err_str = f"incompatible shapes: {windows.shape}, {targets.shape}"
+    assert windows.ndim == targets.ndim == 3, err_str
+    assert windows.shape[0] == targets.shape[0], err_str
+    assert windows.shape[-1] == targets.shape[-1], err_str
+
+    target_len = targets.shape[-2]
+    chunks = np.hstack((windows, targets))
+    chunks = np.flip(chunks, axis=1)
+    return split_chunks_into_windows_and_targets(chunks, target_len=target_len)
+
+
 class TimeSeriesDataset(torch.utils.data.Dataset):
     def __init__(self, windows: NDArray, targets: NDArray) -> None:
         assert len(windows) == len(targets) != 0
@@ -253,7 +265,27 @@ def test_split_chunks_into_windows_and_targets() -> None:
     print("Tests for split_chunks_into_windows_and_targets passed successfully")
 
 
+def test_reverse_windows_targets() -> None:
+    def compare(actual: Tuple[NDArray, NDArray],
+                expected: Tuple[NDArray, NDArray]) -> None:
+        assert len(actual) == len(expected) == 2
+        assert np.array_equal(actual[0], expected[0]), f"{actual} \n\t!=\n{expected}"
+        assert np.array_equal(actual[1], expected[1]), f"{actual} \n\t!=\n{expected}"
+
+    windows = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]], [[9, 10], [11, 12]]])
+    targets = np.array([[[13, 14]], [[15, 16]], [[17, 18]]])
+    windows_expected = np.array([[[13, 14], [3, 4]], [[15, 16], [7, 8]], [[17, 18], [11, 12]]])
+    targets_expected = np.array([[[1, 2]], [[5, 6]], [[9, 10]]])
+    compare(
+        reverse_windows_targets(windows, targets),
+        (windows_expected, targets_expected)
+    )
+
+    print("Tests for reverse_windows_targets passed successfully")
+
+
 if __name__ == "__main__":
     test_train_test_split()
     test_chop_time_series_into_chunks()
     test_split_chunks_into_windows_and_targets()
+    test_reverse_windows_targets()
