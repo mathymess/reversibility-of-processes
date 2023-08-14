@@ -11,7 +11,7 @@ NDArray = numpy.typing.NDArray[np.floating]
 
 class BrownianDatagen:
     def __init__(self, kBT: float = 0.03, γ: float = 3., k: float = 2.,
-                 λ_τ: float = 1, τ: float = 1):
+                 λ_τ: float = 1., τ: float = 1.):
         self.kBT = kBT  # Temperature
         self.γ = γ  # Damping rate
         self.k = k  # Strength of the potential
@@ -19,7 +19,7 @@ class BrownianDatagen:
         self.τ = τ  # Time varies from 0 to τ
 
     def energy(self, x, λ):
-        return 0.5 * self.k * (x-λ) ** 2
+        return 0.5 * self.k * (x - λ) ** 2
 
     def generate(self, numParticles: int = 1000, numSteps: int = 99,
                  rng_seed: Optional[int] = 42, backward: bool = False) -> Tuple[NDArray, NDArray]:
@@ -44,7 +44,9 @@ class BrownianDatagen:
             x_en = xs[:, i+1 if backward else i]
             wList += self.energy(x_en, λs[i+1]) - self.energy(x_en, λs[i])
 
-        return (xs[:, ::-1] if backward else xs, wList)
+        if backward:
+            return xs[:, ::-1], -wList
+        return xs, wList
 
     def windows_targets(self,
                         window_len: int,
@@ -63,23 +65,45 @@ class BrownianDatagen:
         return (np.concatenate(window_list).squeeze(-1),
                 np.concatenate(target_list).squeeze(-1))
 
+    def visualize(self):
+        traj_f, work_f = self.generate(numParticles=10000)
+        traj_b, work_b = self.generate(numParticles=10000, backward=True)
+
+        fig, axs = plt.subplots(nrows=3, ncols=1, figsize=(5, 10))
+        fig.suptitle(f"kBT={self.kBT}, γ={self.γ}, k={self.k}, λ_τ={self.λ_τ}, τ={self.τ}")
+
+        # Plot forward trajectories
+        axs[0].set_title("Forward trajectories")
+        for p in traj_f[:10]:
+            axs[0].plot(p, "o-", linewidth=1, markersize=1.5, alpha=0.7)
+        axs[0].set_ylabel("coordinate of the particle, forward")
+        axs[0].set_xlabel("index")
+        axs[0].grid()
+
+        # Plot backward trajectories
+        axs[1].set_title("Backward trajectories")
+        for p in traj_b[:10]:
+            axs[1].plot(p, "o-", linewidth=1, markersize=1.5, alpha=0.7)
+        axs[1].set_ylabel("coordinate of the particle, backward")
+        axs[1].set_xlabel("index")
+        axs[1].grid()
+
+        # Plot work distributions
+        axs[2].set_title("Work distributions")
+        axs[2].hist(work_f, color="red", label="forward", alpha=0.5)
+        axs[2].hist(work_b, color="blue", label="backward", alpha=0.5)
+        axs[2].grid()
+        axs[2].legend()
+
+        fig.tight_layout()
+
+        return fig, axs
+
 
 if __name__ == "__main__":
-    def plot_trajectories(traj: NDArray, title: Optional[str] = None) -> None:
-        for p in traj[:10]:
-            plt.plot(p, "o-", linewidth=1, alpha=0.7)
-
-        plt.ylabel("coordinate of the particle")
-        plt.xlabel("index")
-        if title is not None:
-            plt.title(title)
-
-        plt.grid()
-        plt.show()
-
-    b = BrownianDatagen(kBT=0.03, k=3., γ=2.)
-    plot_trajectories(b.generate()[0])
-    plot_trajectories(b.generate(backward=True)[0])
+    b = BrownianDatagen(kBT=1., k=1., γ=1.)
+    b.visualize()
+    plt.show()
 
     w, t = b.windows_targets(3, numParticles=50)
     print("windows.shape=", w.shape, "targets.shape=", t.shape)
