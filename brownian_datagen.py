@@ -11,7 +11,7 @@ NDArray = numpy.typing.NDArray[np.floating]
 
 class BrownianDatagen:
     def __init__(self, kBT: float = 0.03, γ: float = 3., k: float = 2.,
-                 λ_τ: float = 1., τ: float = 1.):
+                 λ_τ: float = 5., τ: float = 10.):
         self.kBT = kBT  # Temperature
         self.γ = γ  # Damping rate
         self.k = k  # Strength of the potential
@@ -90,8 +90,8 @@ class BrownianDatagen:
 
         # Plot work distributions
         axs[2].set_title("Work distributions")
-        axs[2].hist(work_f, color="red", label="forward", alpha=0.5)
-        axs[2].hist(work_b, color="blue", label="backward", alpha=0.5)
+        axs[2].hist(work_f, bins=100, color="red", label="forward", alpha=0.5)
+        axs[2].hist(work_b, bins=100, color="blue", label="backward", alpha=0.5)
         axs[2].grid()
         axs[2].legend()
 
@@ -101,9 +101,10 @@ class BrownianDatagen:
 
 
 if __name__ == "__main__":
-    b = BrownianDatagen(kBT=1., k=1., γ=1.)
+    b = BrownianDatagen(kBT=1., γ=4., k=5.)
+
+    w, t = b.windows_targets(window_len=3, numParticles=50)
+    print("windows.shape=", w.shape, "targets.shape=", t.shape)
+
     b.visualize()
     plt.show()
-
-    w, t = b.windows_targets(3, numParticles=50)
-    print("windows.shape=", w.shape, "targets.shape=", t.shape)
