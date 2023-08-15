@@ -233,7 +233,8 @@ def plot_predictions(true: torch.Tensor,
 
 
 def quality_metrics(preds: torch.Tensor, truth: torch.Tensor) -> Dict:
-    assert preds.ndim == truth.ndim + 1 == 3, f"preds.shape={preds.shape}, truth.shape={truth.shape}"
+    err_str = f"preds.shape={preds.shape}, truth.shape={truth.shape}"
+    assert preds.ndim == truth.ndim + 1 == 3, err_str
 
     metrics = {}
     metrics["mae"] = pyro_metric.eval_mae(preds, truth)
