@@ -134,13 +134,15 @@ def test_model_output_dimensions() -> None:
 
 def get_samples_from_posterior_predictive(windows: torch.tensor,
                                           targets: torch.tensor,
-                                          num_samples: int = 100) -> Predictive:
+                                          num_samples: int = 100,
+                                          hidden_size: int = 10) -> Predictive:
     assert windows.ndim == targets.ndim == 2
     assert windows.shape[0] == targets.shape[0]
 
     pyro.clear_param_store()  # Not sure this is necessary, being cautious.
 
-    model = BayesianThreeFCLayers(window_len=windows.shape[-1], target_len=1, datapoint_size=1)
+    model = BayesianThreeFCLayers(window_len=windows.shape[-1], target_len=1,
+                                  datapoint_size=1, hidden_size=hidden_size)
     mcmc = pyro.infer.MCMC(pyro.infer.NUTS(model, jit_compile=False), num_samples)
     mcmc.run(windows, targets)
     predictive = Predictive(model=model, posterior_samples=mcmc.get_samples())
@@ -155,7 +157,8 @@ def posterior_predictive_forward_and_backward_impl(
         targets_f: torch.tensor,
         windows_b: torch.tensor,
         targets_b: torch.tensor,
-        num_samples: int = 100) -> Tuple[Predictive, Predictive]:
+        num_samples: int = 100,
+        hidden_size: int = 10) -> Tuple[Predictive, Predictive]:
     predictive_f = get_samples_from_posterior_predictive(windows_f, targets_f, num_samples)
     predictive_b = get_samples_from_posterior_predictive(windows_b, targets_b, num_samples)
     return predictive_f, predictive_b
@@ -164,14 +167,16 @@ def posterior_predictive_forward_and_backward_impl(
 def posterior_predictive_forward_and_backward(
         train_d: BayesTrainData,
         save_dir: str,
-        num_samples: int = 100) -> Tuple[Predictive, Predictive]:
+        num_samples: int = 100,
+        hidden_size: int = 10) -> Tuple[Predictive, Predictive]:
     save_train_data_to_drive(train_d, save_dir)
     predictive_f, predictive_b = posterior_predictive_forward_and_backward_impl(
         windows_f=train_d.windows_f,
         targets_f=train_d.targets_f,
         windows_b=train_d.windows_b,
         targets_b=train_d.targets_b,
-        num_samples=num_samples)
+        num_samples=num_samples,
+        hidden_size=hidden_size)
     torch.save(predictive_f, os.path.join(save_dir, "predictive.forward.torch"))
     torch.save(predictive_b, os.path.join(save_dir, "predictive.backward.torch"))
     return predictive_f, predictive_b
@@ -212,7 +217,7 @@ def plot_predictions(true: torch.Tensor,
         top = (pred_mean + pred_std).squeeze(-1)
         bottom = (pred_mean - pred_std).squeeze(-1)
         print(top.shape, bottom.shape)
-        ax.fill_between(range(len(top)), bottom, top, alpha=0.6, color='#86cfac', zorder=5)
+        ax.fill_between(range(len(top)), bottom, top, alpha=0.6, color="#86cfac", zorder=5)
 
     if pred_mean is not None:
         ax.plot(pred_mean, 'ro-', linewidth=1, markersize=1, label="predictive mean")
