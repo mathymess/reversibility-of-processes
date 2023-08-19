@@ -2,8 +2,13 @@ from typing import Optional, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing
+import functools
+import torch
 
-from datasets import chop_time_series_into_chunks, split_chunks_into_windows_and_targets
+from bayesian import BayesTrainData
+from datasets import (chop_time_series_into_chunks,
+                      split_chunks_into_windows_and_targets,
+                      reverse_windows_targets)
 
 
 NDArray = numpy.typing.NDArray[np.floating]
@@ -98,6 +103,65 @@ class BrownianDatagen:
         fig.tight_layout()
 
         return fig, axs
+
+
+def create_dataholder_for_windows_and_targets(brownian: BrownianDatagen,
+                                              numParticles: int = 50,
+                                              window_len: int = 3,
+                                              rng_seed: Optional[int] = None) -> BayesTrainData:
+    meaningless_time_series = np.zeros((5, 1), np.float32)
+    dt = BayesTrainData(meaningless_time_series)
+    # For Brownian motion, different windows might come from different
+    # trajectories, so having one single time series doesn't make sense.
+    # Morover, backward and forward don't refer to the same thing anymore:
+    # they are generated separately, rather than backward = np.flip(forward).
+    # But I want to use the same class for holding the train data, so I set attributes manually.
+    generate_windows_targets = functools.partial(brownian.windows_targets,
+                                                 window_len=window_len,
+                                                 numParticles=numParticles)
+    if rng_seed is not None:
+        generate_windows_targets = functools.partial(generate_windows_targets, rng_seed=rng_seed)
+
+    dt.windows_f, dt.targets_f = generate_windows_targets()
+    dt.windows_b, dt.targets_b = generate_windows_targets(backward=True)
+    dt.windows_f, dt.targets_f, dt.windows_b, dt.targets_b = map(
+        lambda x: torch.tensor(x, dtype=torch.float32),
+        (dt.windows_f, dt.targets_f, dt.windows_b, dt.targets_b))
+    return dt
+
+
+def reverse_windows_targets_squeezed(windows: NDArray, targets: NDArray) -> Tuple[NDArray, NDArray]:
+    def unsqueeze(arr: NDArray) -> NDArray:
+        return arr.reshape(*arr.shape, 1)
+
+    windows, targets = reverse_windows_targets(unsqueeze(windows), unsqueeze(targets))
+    return windows.squeeze(-1), targets.squeeze(-1)
+
+
+def create_simple_flip_dataholder_for_windows_and_targets(
+        brownian: BrownianDatagen,
+        numParticles: int = 50,
+        window_len: int = 3,
+        rng_seed: Optional[int] = None) -> BayesTrainData:
+    meaningless_time_series = np.zeros((5, 1), np.float32)
+    dt = BayesTrainData(meaningless_time_series)
+    # For Brownian motion, different windows might come from different
+    # trajectories, so having one single time series doesn't make sense.
+    # But I want to use the same class for holding the train data, so I set attributes manually.
+    generate_windows_targets = functools.partial(brownian.windows_targets,
+                                                 window_len=window_len,
+                                                 numParticles=numParticles)
+    if rng_seed is not None:
+        generate_windows_targets = functools.partial(generate_windows_targets, rng_seed=rng_seed)
+
+    dt.windows_f, dt.targets_f = generate_windows_targets()
+    dt.windows_b, dt.targets_b = reverse_windows_targets_squeezed(dt.windows_f, dt.targets_f)
+
+    dt.windows_f, dt.targets_f, dt.windows_b, dt.targets_b = map(
+        lambda x: torch.tensor(x, dtype=torch.float32),
+        (dt.windows_f, dt.targets_f, dt.windows_b, dt.targets_b))
+
+    return dt
 
 
 if __name__ == "__main__":
