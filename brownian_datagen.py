@@ -27,7 +27,7 @@ class BrownianDatagen:
         return 0.5 * self.k * (x - λ) ** 2
 
     def generate(self, numParticles: int = 1000, numSteps: int = 99,
-                 rng_seed: Optional[int] = 42, backward: bool = False) -> Tuple[NDArray, NDArray]:
+                 rng_seed: Optional[int] = None, backward: bool = False) -> Tuple[NDArray, NDArray]:
         if rng_seed is not None:
             np.random.seed(rng_seed)
 
