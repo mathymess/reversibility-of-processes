@@ -85,19 +85,22 @@ def train_test_distribution_with_dh(dh: AllDataHolder,
 
 if __name__ == "__main__":
     b = BrownianDatagen(kBT=1., γ=1., k=1., λ_τ=5., τ=10.)
-    # dh = create_brownian_particle_alldataholder(b, window_len=5, numParticles=10)
-    # print(len(dh.forward.train_dataset))
-    # train_test_distribution_with_dh(dh, num_epochs=30, num_runs=20, hidden_size=3,
-    #                                 save_output_to_file="20230626_distributions/brownian/03.json")
+    dh = create_brownian_particle_alldataholder(b, window_len=5, numParticles=10)
+    print(len(dh.forward.train_dataset))
+    train_test_distribution_with_dh(dh, num_epochs=30, num_runs=20, hidden_size=3,
+                                    save_output_to_file="20230626_distributions/brownian/03.json")
 
-    # dh = create_brownian_particle_alldataholder(b, window_len=5, numParticles=10, test_same_as_train=False)
-    # train_test_distribution_with_dh(dh, num_epochs=20, num_runs=10, hidden_size=3,
-    #                                 save_output_to_file="20230626_distributions/brownian/04.json")
+    dh = create_brownian_particle_alldataholder(b, window_len=5,
+                                                numParticles=10, test_same_as_train=False)
+    train_test_distribution_with_dh(dh, num_epochs=20, num_runs=10, hidden_size=3,
+                                    save_output_to_file="20230626_distributions/brownian/04.json")
 
-    # dh = create_brownian_particle_alldataholder(b, window_len=5, numParticles=10, test_same_as_train=False)
-    # train_test_distribution_with_dh(dh, num_epochs=20, num_runs=40, hidden_size=5,
-    #                                 save_output_to_file="20230626_distributions/brownian/05.json")
+    dh = create_brownian_particle_alldataholder(b, window_len=5,
+                                                numParticles=10, test_same_as_train=False)
+    train_test_distribution_with_dh(dh, num_epochs=20, num_runs=40, hidden_size=5,
+                                    save_output_to_file="20230626_distributions/brownian/05.json")
 
-    dh = create_brownian_particle_alldataholder(b, window_len=2, numParticles=40, test_same_as_train=False)
+    dh = create_brownian_particle_alldataholder(b, window_len=2, numParticles=40,
+                                                test_same_as_train=False)
     train_test_distribution_with_dh(dh, num_epochs=20, num_runs=40, hidden_size=5,
                                     save_output_to_file="20230626_distributions/brownian/06.json")
