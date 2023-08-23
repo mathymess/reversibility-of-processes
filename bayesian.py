@@ -117,9 +117,10 @@ class BayesianThreeFCLayers(PyroModule):
         ret = self.relu2(self.fc2(ret))
         ret = self.fc3(ret)
 
-        obs = pyro.sample("obs",  # noqa: F841
-                          dist.Normal(ret, sigma * sigma).to_event(1),
-                          obs=y)
+        with pyro.plate("data", windows.shape[0]):
+            obs = pyro.sample("obs",  # noqa: F841
+                              dist.Normal(ret.squeeze(-1), sigma * sigma),
+                              obs=None if y is None else y.squeeze(-1))
 
         return ret
 
@@ -273,4 +274,4 @@ def train_garch():
 if __name__ == "__main__":
     test_model_output_dimensions()
     # train_logistic()
-    train_garch()
+    # train_garch()
