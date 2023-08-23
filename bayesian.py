@@ -23,7 +23,7 @@ NDArray = numpy.typing.NDArray[numpy.floating]
 def prepare_simple_1d_time_series(ts: NDArray,
                                   window_len: int,
                                   take_each_nth_chunk: int = 1,
-                                  reverse: bool = False) -> Tuple[torch.tensor, torch.tensor]:
+                                  reverse: bool = False) -> Tuple[torch.Tensor, torch.Tensor]:
     chunks = chop_time_series_into_chunks(time_series=ts,
                                           chunk_len=window_len + 1,
                                           take_each_nth_chunk=take_each_nth_chunk,
@@ -106,7 +106,7 @@ class BayesianThreeFCLayers(PyroModule):
         self.fc3.weight = PyroSample(dist.Normal(0., prior_scale).expand(size3[::-1]).to_event(2))
         self.fc3.bias = PyroSample(dist.Normal(0., prior_scale).expand(size3[-1:]).to_event(1))
 
-    def forward(self, windows: torch.tensor, y: torch.tensor = None) -> torch.tensor:
+    def forward(self, windows: torch.Tensor, y: Optional[torch.Tensor] = None) -> torch.Tensor:
         assert windows.ndim in (1, 2)
         assert windows.shape[-1] == self.input_size
 
@@ -132,8 +132,8 @@ def test_model_output_dimensions() -> None:
     print("test_model_output_dimensions passed successfully!")
 
 
-def get_samples_from_posterior_predictive(windows: torch.tensor,
-                                          targets: torch.tensor,
+def get_samples_from_posterior_predictive(windows: torch.Tensor,
+                                          targets: torch.Tensor,
                                           num_samples: int = 100,
                                           hidden_size: int = 10) -> Predictive:
     assert windows.ndim == targets.ndim == 2
@@ -153,10 +153,10 @@ def get_samples_from_posterior_predictive(windows: torch.tensor,
 
 
 def posterior_predictive_forward_and_backward_impl(
-        windows_f: torch.tensor,
-        targets_f: torch.tensor,
-        windows_b: torch.tensor,
-        targets_b: torch.tensor,
+        windows_f: torch.Tensor,
+        targets_f: torch.Tensor,
+        windows_b: torch.Tensor,
+        targets_b: torch.Tensor,
         num_samples: int = 100,
         hidden_size: int = 10) -> Tuple[Predictive, Predictive]:
     predictive_f = get_samples_from_posterior_predictive(windows_f, targets_f, num_samples)
