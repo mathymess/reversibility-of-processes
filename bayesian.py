@@ -248,7 +248,7 @@ def quality_metrics(preds: torch.Tensor, truth: torch.Tensor) -> Dict:
 
     metrics = {}
     metrics["mae"] = pyro_metric.eval_mae(preds, truth)
-    metrics["rmse"] = pyro_metric.eval_mae(preds, truth)
+    metrics["rmse"] = pyro_metric.eval_rmse(preds, truth)
     metrics["crps"] = pyro_metric.eval_crps(preds, truth)
     metrics["mean_std"] = preds.std(axis=0).mean().cpu().item()
     metrics["mse_from_all"] = ((truth - preds) ** 2).mean().cpu().item()
