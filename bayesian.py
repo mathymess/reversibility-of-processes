@@ -160,8 +160,12 @@ def posterior_predictive_forward_and_backward_impl(
         targets_b: torch.Tensor,
         num_samples: int = 100,
         hidden_size: int = 10) -> Tuple[Predictive, Predictive]:
-    predictive_f = get_samples_from_posterior_predictive(windows_f, targets_f, num_samples)
-    predictive_b = get_samples_from_posterior_predictive(windows_b, targets_b, num_samples)
+    predictive_f = get_samples_from_posterior_predictive(windows_f, targets_f,
+                                                         num_samples=num_samples,
+                                                         hidden_size=hidden_size)
+    predictive_b = get_samples_from_posterior_predictive(windows_b, targets_b,
+                                                         num_samples=num_samples,
+                                                         hidden_size=hidden_size)
     return predictive_f, predictive_b
 
 
