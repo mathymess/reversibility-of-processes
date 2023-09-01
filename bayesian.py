@@ -216,7 +216,7 @@ def plot_predictions(true: torch.Tensor,
     fig, ax = plt.subplots()
 
     if pred_all is not None:
-        for pred_onedraw in torch.stack(list(pred_all)).T:
+        for pred_onedraw in torch.stack(list(pred_all)):
             ax.plot(pred_onedraw, "o-", linewidth=1, markersize=1,
                     alpha=0.2, color="green")
 
@@ -251,7 +251,10 @@ def plot_predictions(true: torch.Tensor,
 
 def quality_metrics(preds: torch.Tensor, truth: torch.Tensor) -> Dict:
     err_str = f"preds.shape={preds.shape}, truth.shape={truth.shape}"
-    assert preds.ndim == truth.ndim + 1 == 3, err_str
+    # assert preds.ndim == truth.ndim + 1 == 3, err_str
+    assert preds.ndim == truth.ndim == 2, err_str
+    assert preds.shape[1] == truth.shape[0], err_str
+    truth = truth.squeeze(-1)
 
     metrics = {}
     metrics["mae"] = pyro_metric.eval_mae(preds, truth)
