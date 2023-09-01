@@ -210,6 +210,8 @@ def plot_predictions(true: torch.Tensor,
                      pred_mean: Optional[torch.Tensor] = None,
                      pred_std: Optional[torch.Tensor] = None,
                      show: bool = False,
+                     xlim: Optional[Tuple[float, float]] = None,
+                     ylim: Optional[Tuple[float, float]] = None,
                      title: Optional[str] = None) -> plt.Axes:
     fig, ax = plt.subplots()
 
@@ -228,6 +230,11 @@ def plot_predictions(true: torch.Tensor,
         ax.plot(pred_mean, 'ro-', linewidth=1, markersize=1, label="predictive mean")
 
     ax.plot(true, 'bo-', linewidth=1, markersize=1, label="true value")
+
+    if xlim is not None:
+        ax.set_xlim(*xlim)
+    if ylim is not None:
+        ax.set_ylim(*ylim)
 
     ax.set_xlabel("index")
     ax.set_ylabel("target value")
