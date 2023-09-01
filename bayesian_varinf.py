@@ -4,9 +4,7 @@ from typing import Tuple
 import torch
 
 import pyro
-from pyro.nn import PyroModule
 from pyro.infer import Predictive
-from pyro.infer.autoguide import AutoDiagonalNormal
 
 import tqdm
 import tempfile
@@ -21,8 +19,8 @@ from train_test_utils import write_json_to_file, LossDistribution
 
 def get_rmse_loss(windows: torch.Tensor,
                   targets: torch.Tensor,
-                  model: PyroModule,
-                  guide: pyro.infer.autoguides.AutoGuide,
+                  model: pyro.nn.PyroModule,
+                  guide: pyro.infer.autoguide.AutoGuide,
                   num_samples: int = 200) -> float:
     predictive = Predictive(model=model, guide=guide, num_samples=num_samples)
     preds = predictive(windows)["obs"]
@@ -46,7 +44,7 @@ def train_varinf(windows: torch.Tensor,
 
     model = BayesianThreeFCLayers(window_len=windows.shape[-1], target_len=1,
                                   datapoint_size=1, hidden_size=hidden_size)
-    guide = AutoDiagonalNormal(model)
+    guide = pyro.infer.autoguide.AutoDiagonalNormal(model)
     optimizer = pyro.optim.Adam({"lr": lr})
     svi = pyro.infer.SVI(model, guide, optimizer, loss=pyro.infer.Trace_ELBO())
 
