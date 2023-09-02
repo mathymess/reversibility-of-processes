@@ -10,9 +10,9 @@ from bayesian_varinf import (ExpResultsWithTwoLosses,
 
 if __name__ == "__main__":
     d = BayesTrainData(load_logistic_map_time_series(1500),
-                       window_len=1, noise_std=0.05)
+                       window_len=1, noise_std=0.02)
 
-    save_dir = "20230724_preds/debug_varinf/logistic0"
+    save_dir = "20230724_preds/debug_varinf/logistic_AutoMultivariateNormal"
 
     if not os.path.isdir(save_dir):
         posterior_predictive_forward_and_backward(train_d=d, save_dir=save_dir, num_samples=60)

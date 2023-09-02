@@ -44,7 +44,7 @@ def train_varinf(windows: torch.Tensor,
 
     model = BayesianThreeFCLayers(window_len=windows.shape[-1], target_len=1,
                                   datapoint_size=1, hidden_size=hidden_size)
-    guide = pyro.infer.autoguide.AutoDiagonalNormal(model)
+    guide = pyro.infer.autoguide.AutoMultivariateNormal(model)
     optimizer = pyro.optim.Adam({"lr": lr})
     svi = pyro.infer.SVI(model, guide, optimizer, loss=pyro.infer.Trace_ELBO())
 
