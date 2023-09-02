@@ -201,8 +201,11 @@ class ExperimentResults:
         self.predictive_b = torch.load(os.path.join(save_dir, "predictive.backward.torch"))
         self.pred_obs_b = self.predictive_b(self.windows_b)["obs"]
 
-        self.ts = torch.load(os.path.join(save_dir, "ts.torch"))
-        self.noisy_ts = torch.load(os.path.join(save_dir, "noisy_ts.torch"))
+        try:
+            self.ts = torch.load(os.path.join(save_dir, "ts.torch"))
+            self.noisy_ts = torch.load(os.path.join(save_dir, "noisy_ts.torch"))
+        except FileNotFoundError:
+            pass
 
 
 def plot_predictions(true: torch.Tensor,
