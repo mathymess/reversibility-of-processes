@@ -29,5 +29,6 @@ if __name__ == "__main__":
     er = ExperimentResults(save_dir)
     preds = er.predictive_f(x_test)["obs"]
 
-    plot_predictions(true=y_test, pred_all=preds)
+    # plot_predictions(true=y_test, pred_all=preds)
+    plot_predictions(true=y_test, pred_std=preds.std(0), pred_mean=preds.mean(0))
     plt.show()
