@@ -13,18 +13,19 @@ from bayesian_varinf import (ExpResultsWithTwoLosses,)
 
 
 if __name__ == "__main__":
-    d = BayesTrainData(load_logistic_map_time_series(1500),
-                       window_len=1, noise_std=0.02)
+    ts = torch.linspace(0., 1., 300).reshape(-1, 1)
+    d = BayesTrainData(ts, window_len=1, noise_std=0.00005)
 
-    save_dir = "20230724_preds/debug_varinf/logistic_nonvarinf"
+    save_dir = "20230724_preds/debug_varinf/linspace_mcmc_size1/"
 
     if not os.path.isdir(save_dir):
-        posterior_predictive_forward_and_backward(train_d=d, save_dir=save_dir, num_samples=60)
+        posterior_predictive_forward_and_backward(train_d=d, save_dir=save_dir,
+                                                  num_samples=30, hidden_size=1)
     else:
         print(f"Directory '{save_dir}' exists, won't overwrite")
 
-    x_test = torch.linspace(-0.2, 1.2, 1000).reshape(-1, 1)
-    y_test = (4.0 * x_test * (1 - x_test))
+    x_test = ts[:-1]
+    y_test = ts[1:]
 
     er = ExperimentResults(save_dir)
     preds = er.predictive_f(x_test)["obs"]
