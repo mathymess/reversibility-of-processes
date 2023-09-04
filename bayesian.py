@@ -208,7 +208,7 @@ class ExperimentResults:
             pass
 
 
-def plot_predictions(true: torch.Tensor,
+def plot_predictions(true: Optional[torch.Tensor] = None,
                      pred_all: Optional[torch.Tensor] = None,
                      pred_mean: Optional[torch.Tensor] = None,
                      pred_std: Optional[torch.Tensor] = None,
@@ -232,7 +232,8 @@ def plot_predictions(true: torch.Tensor,
     if pred_mean is not None:
         ax.plot(pred_mean, 'ro-', linewidth=1, markersize=1, label="predictive mean")
 
-    ax.plot(true, 'bo-', linewidth=1, markersize=1, label="true value")
+    if true is not None:
+        ax.plot(true, 'bo-', linewidth=1, markersize=1, label="true value")
 
     if xlim is not None:
         ax.set_xlim(*xlim)
