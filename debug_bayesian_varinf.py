@@ -18,11 +18,11 @@ if __name__ == "__main__":
     d = BayesTrainData(ts, window_len=1, noise_std=0.00005)
     print(d.windows_f)
 
-    save_dir = "20230724_preds/debug_varinf/linspace_mcmc_size2/"
+    save_dir = "20230724_preds/debug_varinf/linspace_mcmc_size8/"
 
     if not os.path.isdir(save_dir):
         posterior_predictive_forward_and_backward(train_d=d, save_dir=save_dir,
-                                                  num_samples=30, hidden_size=2)
+                                                  num_samples=30, hidden_size=8)
     else:
         print(f"Directory '{save_dir}' exists, won't overwrite")
 
