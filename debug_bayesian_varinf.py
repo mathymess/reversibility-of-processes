@@ -1,5 +1,6 @@
 import os
 import torch
+import numpy as np
 import matplotlib.pyplot as plt
 
 from generate_time_series import load_logistic_map_time_series
@@ -13,23 +14,21 @@ from bayesian_varinf import (ExpResultsWithTwoLosses,)
 
 
 if __name__ == "__main__":
-    ts = torch.linspace(0., 1., 300).reshape(-1, 1)
+    ts = np.linspace(0., 1., 300).reshape(-1, 1)
     d = BayesTrainData(ts, window_len=1, noise_std=0.00005)
+    print(d.windows_f)
 
-    save_dir = "20230724_preds/debug_varinf/linspace_mcmc_size1/"
+    save_dir = "20230724_preds/debug_varinf/linspace_mcmc_size2/"
 
     if not os.path.isdir(save_dir):
         posterior_predictive_forward_and_backward(train_d=d, save_dir=save_dir,
-                                                  num_samples=30, hidden_size=1)
+                                                  num_samples=30, hidden_size=2)
     else:
         print(f"Directory '{save_dir}' exists, won't overwrite")
 
-    x_test = ts[:-1]
-    y_test = ts[1:]
-
     er = ExperimentResults(save_dir)
-    preds = er.predictive_f(x_test)["obs"]
+    preds = er.predictive_f(d.windows_f)["obs"]
 
     # plot_predictions(true=y_test, pred_all=preds)
-    plot_predictions(true=y_test, pred_std=preds.std(0), pred_mean=preds.mean(0))
+    plot_predictions(true=d.targets_f, pred_std=preds.std(0), pred_mean=preds.mean(0))
     plt.show()
