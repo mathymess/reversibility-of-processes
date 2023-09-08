@@ -1,5 +1,7 @@
 # Analyzing reversibility of physical processes with ML
 
+## Abstract
+
 Time irreversibility is a fundamental concept in physics, and the analysis of this property can provide insights into the underlying physical laws that govern the universe.
 However, the study of time irreversibility is often limited to mathematical models and computational simulations, and it can be challenging to gain a deeper understanding of the underlying principles.
 In this project, we aim to analyze time irreversibility through the lens of neural networks.
@@ -9,7 +11,33 @@ The difference in performance or architecture giving similar performance should 
 Predicting the trajectory of a dynamical system can be thought of as a time series problem: knowing the position at moments $t_{1}, \ldots, t_{n-1}$, predict the position at time $t_n$.
 In this project we use primitive ML to test the following hypothesis: if the process is irreversible, time reversal of the trajectory should affect the difficulty of such prediction.
 
+## Method
+
+![](README_method.png)
+
+1. Generate time series data (see e.g. `generate_time_series.py`).
+2. Chop it into sliding windows.
+3. Train a model to predict a point after and before the window, given the window.
+4. Compare performance.
+5. Different performance forward and backward => irreversibility.
+
+Physical and other processes under consideration:
+- Brownian particle from the paper in [Nature](https://www.nature.com/articles/s41567-020-1018-2) (`brownian_datagen.py`), the stochastic thermodynamic system
+- probabilistic time series from the papers by Maximilano Zanin (`zanins_time_series.ipynb`),
+- damped harmonic oscillator, damped double pendulum
+- Lorenz attractor, Belousov-Zhabotinsky reaction, Kepler motion
+
+## File structure
+
+- in `20230507_distributions/`, `20230626_distributions/` the serialized learning curves and loss distributions are stored
+- `*.py`: generally, python files hold helpers and infrastucture-supporting code that is then imported to Jupyter notebooks and the like
+- `traintest_*.py`: scripts that are run once to train the model and serialize the training process for future reuse and poking in Jupyter notebooks
+- `bayesian_*.{py,ipynb}`: files in which we attempted to apply Bayesian neural networks to stochastic thermodynamical systems
+
 ## Tensorboard history
+
+When we were still experimenting with the hyperparameters, we used [`tensorboard`](https://pytorch.org/docs/stable/tensorboard.html) to store and display learning curves.
+Below is the history of experiments, with brief summaries.
 
 ### 5.1, 20230505, git tag `tensorboard5.1`
 
