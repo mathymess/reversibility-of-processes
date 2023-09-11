@@ -10,7 +10,7 @@ from pyro.infer import SVI, Trace_ELBO
 from pyro.nn import PyroModule, PyroSample
 from pyro.infer.autoguide import AutoDiagonalNormal
 
-from ../bayesian_varinf.py import BayesianThreeFCLayers
+from bayesian import BayesianThreeFCLayers
 
 
 class BNN(PyroModule):
