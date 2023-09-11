@@ -11,7 +11,7 @@ from pyro.nn import PyroModule, PyroSample
 from pyro.infer.autoguide import AutoDiagonalNormal
 from pyro.contrib import forecast as pyro_metric
 
-from bayesian import BayesianThreeFCLayers
+from bayesian import BayesianThreeFCLayers, plot_predictions
 
 
 class BNN(PyroModule):
@@ -50,13 +50,13 @@ y_train = 3.0 * x_train + 0.2 * torch.rand(x_train.shape)
 # plt.scatter(x_train, y_train)
 # plt.show()
 
-# model = BNN(hid_dim=10, n_hid_layers=3, prior_scale=5.)
+# model = BNN(hid_dim=10, n_hid_layers=3, prior_scale=2.)
 x_train = x_train.reshape(-1, 1)
 y_train = y_train.reshape(-1, 1)
-model = BayesianThreeFCLayers(hidden_size=10, window_len=1, prior_scale=3.)
+model = BayesianThreeFCLayers(hidden_size=10, window_len=1, prior_scale=0.5)
 
 mean_field_guide = AutoDiagonalNormal(model)
-optimizer = pyro.optim.Adam({"lr": 0.1})
+optimizer = pyro.optim.Adam({"lr": 0.01})
 
 svi = SVI(model, mean_field_guide, optimizer, loss=Trace_ELBO())
 pyro.clear_param_store()
@@ -71,12 +71,15 @@ for epoch in progress_bar:
     losses.append(loss)
     progress_bar.set_postfix(loss=f"{loss / x_train.shape[0]:.3f}")
 
-    if epoch % 100 == 0:
+    if epoch % 1000 == 0:
         predictive = pyro.infer.Predictive(model=model, guide=mean_field_guide,
                                            num_samples=100)
         preds = predictive(x_train)["obs"]
         rmse = pyro_metric.eval_rmse(preds, y_train)
         rmse_losses.append(rmse)
+
+        plot_predictions(true=y_train, pred_mean=preds.mean(0), pred_std=preds.std(0))
+        plt.show()
 
 plt.plot(losses)
 plt.show()
