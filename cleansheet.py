@@ -10,8 +10,6 @@ from pyro.infer import SVI, Trace_ELBO
 from pyro.nn import PyroModule, PyroSample
 from pyro.infer.autoguide import AutoDiagonalNormal
 
-from bayesian import BayesianThreeFCLayers
-
 
 class BNN(PyroModule):
     def __init__(self, in_dim=1, out_dim=1, hid_dim=10, n_hid_layers=5, prior_scale=5.):
@@ -32,6 +30,7 @@ class BNN(PyroModule):
             layer.bias = PyroSample(dist.Normal(0., prior_scale).expand([self.layer_sizes[layer_idx + 1]]).to_event(1))
 
     def forward(self, x, y=None):
+        x = x.reshape(-1, 1)
         x = self.activation(self.layers[0](x))  # input --> hidden
         for layer in self.layers[1:-1]:
             x = self.activation(layer(x))  # hidden --> hidden
@@ -46,10 +45,10 @@ class BNN(PyroModule):
 x_train = torch.linspace(0., 1., 200)
 y_train = 3.0 * x_train + torch.rand(x_train.shape)
 
-# model = BNN(hid_dim=10, n_hid_layers=3, prior_scale=5.)
-model = BayesianThreeFCLayers(hid_dim=10, n_hid_layers=3, prior_scale=5.)
+model = BNN(hid_dim=10, n_hid_layers=3, prior_scale=5.)
+
 mean_field_guide = AutoDiagonalNormal(model)
-optimizer = pyro.optim.Adam({"lr": 0.01})
+optimizer = pyro.optim.Adam({"lr": 0.1})
 
 svi = SVI(model, mean_field_guide, optimizer, loss=Trace_ELBO())
 pyro.clear_param_store()
