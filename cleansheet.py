@@ -9,6 +9,7 @@ import pyro.distributions as dist
 from pyro.infer import SVI, Trace_ELBO
 from pyro.nn import PyroModule, PyroSample
 from pyro.infer.autoguide import AutoDiagonalNormal
+from pyro.contrib import forecast as pyro_metric
 
 
 class BNN(PyroModule):
@@ -43,7 +44,9 @@ class BNN(PyroModule):
 
 
 x_train = torch.linspace(0., 1., 200)
-y_train = 3.0 * x_train + torch.rand(x_train.shape)
+y_train = 3.0 * x_train + 0.2 * torch.rand(x_train.shape)
+# plt.scatter(x_train, y_train)
+# plt.show()
 
 model = BNN(hid_dim=10, n_hid_layers=3, prior_scale=5.)
 
@@ -57,10 +60,21 @@ num_epochs = 25000
 progress_bar = trange(num_epochs)
 
 losses = []
+rmse_losses = []
 for epoch in progress_bar:
     loss = svi.step(x_train, y_train)
     losses.append(loss)
     progress_bar.set_postfix(loss=f"{loss / x_train.shape[0]:.3f}")
 
+    if epoch % 100 == 0:
+        predictive = pyro.infer.Predictive(model=model, guide=mean_field_guide,
+                                           num_samples=100)
+        preds = predictive(x_train)["obs"]
+        rmse = pyro_metric.eval_rmse(preds, y_train)
+        rmse_losses.append(rmse)
+
 plt.plot(losses)
+plt.show()
+
+plt.plot(rmse_losses)
 plt.show()
