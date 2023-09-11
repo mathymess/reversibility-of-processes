@@ -11,6 +11,8 @@ from pyro.nn import PyroModule, PyroSample
 from pyro.infer.autoguide import AutoDiagonalNormal
 from pyro.contrib import forecast as pyro_metric
 
+from bayesian import BayesianThreeFCLayers
+
 
 class BNN(PyroModule):
     def __init__(self, in_dim=1, out_dim=1, hid_dim=10, n_hid_layers=5, prior_scale=5.):
@@ -48,7 +50,10 @@ y_train = 3.0 * x_train + 0.2 * torch.rand(x_train.shape)
 # plt.scatter(x_train, y_train)
 # plt.show()
 
-model = BNN(hid_dim=10, n_hid_layers=3, prior_scale=5.)
+# model = BNN(hid_dim=10, n_hid_layers=3, prior_scale=5.)
+x_train = x_train.reshape(-1, 1)
+y_train = y_train.reshape(-1, 1)
+model = BayesianThreeFCLayers(hidden_size=10, window_len=1)
 
 mean_field_guide = AutoDiagonalNormal(model)
 optimizer = pyro.optim.Adam({"lr": 0.1})
