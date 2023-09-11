@@ -53,7 +53,7 @@ y_train = 3.0 * x_train + 0.2 * torch.rand(x_train.shape)
 # model = BNN(hid_dim=10, n_hid_layers=3, prior_scale=5.)
 x_train = x_train.reshape(-1, 1)
 y_train = y_train.reshape(-1, 1)
-model = BayesianThreeFCLayers(hidden_size=10, window_len=1)
+model = BayesianThreeFCLayers(hidden_size=10, window_len=1, prior_scale=3.)
 
 mean_field_guide = AutoDiagonalNormal(model)
 optimizer = pyro.optim.Adam({"lr": 0.1})
