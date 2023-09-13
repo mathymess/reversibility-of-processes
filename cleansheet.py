@@ -12,6 +12,7 @@ from pyro.infer.autoguide import AutoDiagonalNormal, AutoDelta
 from pyro.contrib import forecast as pyro_metric
 
 from bayesian import BayesianThreeFCLayers, plot_predictions
+from brownian_datagen import BrownianDatagen
 
 
 class BNN(PyroModule):
@@ -44,9 +45,16 @@ class BNN(PyroModule):
             obs = pyro.sample("obs", dist.Normal(mu, sigma * sigma), obs=y)
         return mu
 
+b = BrownianDatagen(kBT=0.03, γ=1., k=2., λ_τ=5., τ=10.)
+# b.visualize()
+# plt.show()
+x_train, y_train = b.windows_targets(window_len=1, rng_seed=42, numParticles=20)
+x_train = torch.tensor(x_train, dtype=torch.float32)
+y_train = torch.tensor(y_train, dtype=torch.float32)
+print(x_train.shape, y_train.shape)
 
-x_train = torch.linspace(0., 1., 200)
-y_train = 3.0 * x_train + 0.2 * torch.rand(x_train.shape)
+# x_train = torch.linspace(0., 1., 200)
+# y_train = 3.0 * x_train + 0.2 * torch.rand(x_train.shape)
 # plt.scatter(x_train, y_train)
 # plt.show()
 
@@ -76,7 +84,7 @@ for epoch in progress_bar:
         predictive = pyro.infer.Predictive(model=model, guide=mean_field_guide,
                                            num_samples=100)
         preds = predictive(x_train)["obs"]
-        rmse = pyro_metric.eval_rmse(preds, y_train)
+        rmse = pyro_metric.eval_rmse(preds, y_train.squeeze(-1))
         rmse_losses.append(rmse)
 
         plot_predictions(true=y_train, pred_mean=preds.mean(0), pred_std=preds.std(0))
