@@ -56,12 +56,12 @@ y_train = y_train.reshape(-1, 1)
 model = BayesianThreeFCLayers(hidden_size=10, window_len=1, prior_scale=0.5)
 
 mean_field_guide = AutoDiagonalNormal(model)
-optimizer = pyro.optim.Adam({"lr": 0.01})
+optimizer = pyro.optim.Adam({"lr": 0.1})
 
 svi = SVI(model, mean_field_guide, optimizer, loss=Trace_ELBO())
 pyro.clear_param_store()
 
-num_epochs = 25000
+num_epochs = 10000
 progress_bar = trange(num_epochs)
 
 losses = []
