@@ -64,16 +64,16 @@ print(x_train.shape, y_train.shape)
 # model = BNN(hid_dim=10, n_hid_layers=3, prior_scale=5.)
 # x_train = x_train.reshape(-1, 1)
 # y_train = y_train.reshape(-1, 1)
-model = BayesianThreeFCLayers(hidden_size=5, window_len=3, prior_scale=5.)
+model = BayesianThreeFCLayers(hidden_size=5, window_len=3, prior_scale=0.5)
 
-# mean_field_guide = AutoDiagonalNormal(model)
-mean_field_guide = AutoDelta(model)
+mean_field_guide = AutoDiagonalNormal(model)
+# mean_field_guide = AutoDelta(model)
 optimizer = pyro.optim.Adam({"lr": 0.001})
 
 svi = SVI(model, mean_field_guide, optimizer, loss=Trace_ELBO())
 pyro.clear_param_store()
 
-num_epochs = 2000
+num_epochs = 4000
 progress_bar = trange(num_epochs)
 
 losses = []
@@ -83,7 +83,7 @@ for epoch in progress_bar:
     losses.append(loss)
     progress_bar.set_postfix(loss=f"{loss / x_train.shape[0]:.3f}")
 
-    if (epoch + 1) % 100 == 0:
+    if (epoch + 1) % 250 == 0:
         predictive = pyro.infer.Predictive(model=model, guide=mean_field_guide,
                                            num_samples=100)
         preds = predictive(x_test)["obs"]
