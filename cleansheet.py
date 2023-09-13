@@ -45,12 +45,15 @@ class BNN(PyroModule):
             obs = pyro.sample("obs", dist.Normal(mu, sigma * sigma), obs=y)
         return mu
 
-b = BrownianDatagen(kBT=0.03, γ=1., k=2., λ_τ=5., τ=10.)
+b = BrownianDatagen(kBT=1., γ=1., k=1., λ_τ=5., τ=10.)
 # b.visualize()
 # plt.show()
-x_train, y_train = b.windows_targets(window_len=1, rng_seed=42, numParticles=20)
+x_train, y_train = b.windows_targets(window_len=3, rng_seed=42, numParticles=100)
+x_test, y_test = b.windows_targets(window_len=3, rng_seed=24, numParticles=20)
 x_train = torch.tensor(x_train, dtype=torch.float32)
 y_train = torch.tensor(y_train, dtype=torch.float32)
+x_test = torch.tensor(x_test, dtype=torch.float32)
+y_test = torch.tensor(y_test, dtype=torch.float32)
 print(x_train.shape, y_train.shape)
 
 # x_train = torch.linspace(0., 1., 200)
@@ -59,13 +62,13 @@ print(x_train.shape, y_train.shape)
 # plt.show()
 
 # model = BNN(hid_dim=10, n_hid_layers=3, prior_scale=5.)
-x_train = x_train.reshape(-1, 1)
-y_train = y_train.reshape(-1, 1)
-model = BayesianThreeFCLayers(hidden_size=10, window_len=1, prior_scale=0.5)
+# x_train = x_train.reshape(-1, 1)
+# y_train = y_train.reshape(-1, 1)
+model = BayesianThreeFCLayers(hidden_size=5, window_len=3, prior_scale=5.)
 
 # mean_field_guide = AutoDiagonalNormal(model)
 mean_field_guide = AutoDelta(model)
-optimizer = pyro.optim.Adam({"lr": 0.1})
+optimizer = pyro.optim.Adam({"lr": 0.001})
 
 svi = SVI(model, mean_field_guide, optimizer, loss=Trace_ELBO())
 pyro.clear_param_store()
@@ -80,14 +83,14 @@ for epoch in progress_bar:
     losses.append(loss)
     progress_bar.set_postfix(loss=f"{loss / x_train.shape[0]:.3f}")
 
-    if epoch % 100 == 0:
+    if (epoch + 1) % 100 == 0:
         predictive = pyro.infer.Predictive(model=model, guide=mean_field_guide,
                                            num_samples=100)
-        preds = predictive(x_train)["obs"]
-        rmse = pyro_metric.eval_rmse(preds, y_train.squeeze(-1))
+        preds = predictive(x_test)["obs"]
+        rmse = pyro_metric.eval_crps(preds, y_test.squeeze(-1))
         rmse_losses.append(rmse)
 
-        plot_predictions(true=y_train, pred_mean=preds.mean(0), pred_std=preds.std(0))
+        plot_predictions(true=y_test, pred_mean=preds.mean(0), pred_std=preds.std(0))
         plt.show()
 
 plt.plot(losses)
