@@ -1,5 +1,5 @@
 import os
-from typing import Tuple
+from typing import Tuple, Optional
 
 import torch
 
@@ -17,14 +17,14 @@ from bayesian import (save_train_data_to_drive,
 from train_test_utils import write_json_to_file, LossDistribution
 
 
-def get_rmse_loss(windows: torch.Tensor,
-                  targets: torch.Tensor,
-                  model: pyro.nn.PyroModule,
-                  guide: pyro.infer.autoguide.AutoGuide,
-                  num_samples: int = 200) -> float:
+def get_metrics(windows: torch.Tensor,
+                targets: torch.Tensor,
+                model: pyro.nn.PyroModule,
+                guide: pyro.infer.autoguide.AutoGuide,
+                num_samples: int = 200) -> float:
     predictive = Predictive(model=model, guide=guide, num_samples=num_samples)
     preds = predictive(windows)["obs"]
-    return quality_metrics(preds, targets)["rmse"]
+    return quality_metrics(preds, targets)
 
 
 TrainRetval = Tuple[Predictive, torch.Tensor, torch.Tensor]
@@ -34,8 +34,10 @@ def train_varinf(windows: torch.Tensor,
                  targets: torch.Tensor,
                  num_samples: int = 500,
                  hidden_size: int = 10,
-                 num_epochs: int = 1000,
-                 lr: float = 0.1,
+                 num_epochs: int = 4000,
+                 lr: float = 0.001,
+                 prior_scale: float = 0.5,
+                 save_metrics_every_n_epochs: int = 10,
                  use_tqdm: bool = True) -> TrainRetval:
     assert windows.ndim == targets.ndim == 2
     assert windows.shape[0] == targets.shape[0]
@@ -43,29 +45,29 @@ def train_varinf(windows: torch.Tensor,
     pyro.clear_param_store()  # Not sure this is necessary, being cautious.
 
     model = BayesianThreeFCLayers(window_len=windows.shape[-1], target_len=1,
-                                  datapoint_size=1, hidden_size=hidden_size)
-    guide = pyro.infer.autoguide.AutoMultivariateNormal(model)
+                                  datapoint_size=1, hidden_size=hidden_size,
+                                  prior_scale=prior_scale)
+    guide = pyro.infer.autoguide.AutoDiagonalNormal(model)
     optimizer = pyro.optim.Adam({"lr": lr})
     svi = pyro.infer.SVI(model, guide, optimizer, loss=pyro.infer.Trace_ELBO())
 
     losses = []
-    rmse_losses = []
-    for i in tqdm.trange(num_epochs) if use_tqdm else range(num_epochs):
+    metrics = []
+    for epoch in tqdm.trange(num_epochs) if use_tqdm else range(num_epochs):
         loss = svi.step(windows, targets)
         losses.append(loss)
 
-        if i % 10 == 0:
-            rmse = get_rmse_loss(windows, targets, model, guide)
-            rmse_losses.append(rmse)
+        if (epoch + 5) % save_metrics_every_n_epochs == 0:
+            m = get_metrics(windows, targets, model, guide)
+            metrics.append(m)
 
     losses = torch.tensor(losses, dtype=torch.float32)
-    rmse_losses = torch.tensor(rmse_losses, dtype=torch.float32)
 
     predictive = Predictive(model=model, guide=guide, num_samples=num_samples)
 
     pyro.clear_param_store()  # Not sure this is necessary, being cautious.
 
-    return predictive, losses, rmse_losses
+    return predictive, losses, metrics
 
 
 def posterior_predictive_forward_and_backward_impl(
@@ -92,15 +94,15 @@ def posterior_predictive_forward_and_backward(
         targets_b=train_d.targets_b,
         **kwargs)
 
-    predictive_f, losses_f, rmse_losses_f = res_f
+    predictive_f, losses_f, metrics_f = res_f
     torch.save(predictive_f, os.path.join(save_dir, "predictive.forward.torch"))
     torch.save(losses_f, os.path.join(save_dir, "losses_f.torch"))
-    torch.save(rmse_losses_f, os.path.join(save_dir, "rmse_losses_f.torch"))
+    torch.save(metrics_f, os.path.join(save_dir, "metrics.forward.torch"))
 
-    predictive_b, losses_b, rmse_losses_b = res_b
+    predictive_b, losses_b, metrics_b = res_b
     torch.save(predictive_b, os.path.join(save_dir, "predictive.backward.torch"))
     torch.save(losses_b, os.path.join(save_dir, "losses_b.torch"))
-    torch.save(rmse_losses_b, os.path.join(save_dir, "rmse_losses_b.torch"))
+    torch.save(metrics_b, os.path.join(save_dir, "metrics.backward.torch"))
 
     return res_f, res_b
 
@@ -115,8 +117,8 @@ class ExpResultsWithLosses(ExperimentResults):
 class ExpResultsWithTwoLosses(ExpResultsWithLosses):
     def __init__(self, save_dir: str) -> None:
         super().__init__(save_dir)
-        self.rmse_losses_f = torch.load(os.path.join(save_dir, "rmse_losses_f.torch"))
-        self.rmse_losses_b = torch.load(os.path.join(save_dir, "rmse_losses_b.torch"))
+        self.metrics_f = torch.load(os.path.join(save_dir, "metrics.forward.torch"))
+        self.metrics_b = torch.load(os.path.join(save_dir, "metrics.backward.torch"))
 
 
 def get_save_dir(save_dir_prefix: str, run: int) -> str:
@@ -138,18 +140,28 @@ def train_fb_n_times(train_d: BayesTrainData,
 
 def load_learning_curves(save_dir_prefix: str,
                          num_runs: int,
-                         rmse_instead: bool = False) -> LossDistribution:
+                         alt_metric: Optional[str] = None) -> LossDistribution:
     losses_f = []
     losses_b = []
     for run in range(num_runs):
         save_dir = get_save_dir(save_dir_prefix, run)
-        rmse_pref = "rmse_" if rmse_instead else ""
-        losses_f.append(torch.load(os.path.join(save_dir, rmse_pref + "losses_f.torch")).tolist())
-        losses_b.append(torch.load(os.path.join(save_dir, rmse_pref + "losses_b.torch")).tolist())
+        if alt_metric is None:
+            losses_f.append(torch.load(os.path.join(save_dir, "losses_f.torch")).tolist())
+            losses_b.append(torch.load(os.path.join(save_dir, "losses_b.torch")).tolist())
+        else:
+            metrics_f = torch.load(os.path.join(save_dir, "metrics.forward.torch"))
+            metrics_f = [dikt[alt_metric] for dikt in metrics_f]
+            losses_f.append(metrics_f)
+
+            metrics_b = torch.load(os.path.join(save_dir, "metrics.backward.torch"))
+            metrics_b = [dikt[alt_metric] for dikt in metrics_b]
+            losses_b.append(metrics_b)
 
     loss_dict = {"forward": losses_f, "backward": losses_b}
     with tempfile.NamedTemporaryFile() as file:
         write_json_to_file(loss_dict, file.name)
         result = LossDistribution(file.name)
+
+    result.label = "ELBO-loss" if alt_metric is None else alt_metric
 
     return result
