@@ -2,6 +2,7 @@ import os
 from typing import Tuple, Optional
 
 import torch
+from sklearn.model_selection import train_test_split
 
 import pyro
 from pyro.infer import Predictive
@@ -37,10 +38,15 @@ def train_varinf(windows: torch.Tensor,
                  num_epochs: int = 4000,
                  lr: float = 0.001,
                  prior_scale: float = 0.5,
+                 train_test_split_ratio: Optional[float] = None,  # None -> Loss on train only
                  save_metrics_every_n_epochs: int = 10,
                  use_tqdm: bool = True) -> TrainRetval:
     assert windows.ndim == targets.ndim == 2
     assert windows.shape[0] == targets.shape[0]
+
+    if train_test_split_ratio is not None:
+        windows, windows_test, targets, targets_test = train_test_split(
+            windows, targets, train_size=train_test_split_ratio, random_state=42)
 
     pyro.clear_param_store()  # Not sure this is necessary, being cautious.
 
@@ -59,6 +65,10 @@ def train_varinf(windows: torch.Tensor,
 
         if (epoch + 5) % save_metrics_every_n_epochs == 0:
             m = get_metrics(windows, targets, model, guide)
+            if train_test_split_ratio is not None:
+                m_test = get_metrics(windows_test, targets_test, model, guide)
+                m = {**{"train_" + k : v for k, v in m.items()},
+                     **{"test_" + k : v for k, v in m_test.items()}}
             metrics.append(m)
 
     losses = torch.tensor(losses, dtype=torch.float32)
