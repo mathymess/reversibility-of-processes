@@ -8,7 +8,7 @@ import pyro
 import pyro.distributions as dist
 from pyro.infer import SVI, Trace_ELBO
 from pyro.nn import PyroModule, PyroSample
-from pyro.infer.autoguide import AutoDiagonalNormal, AutoMultivariateNormal
+from pyro.infer.autoguide import AutoDiagonalNormal, AutoDelta
 from pyro.contrib import forecast as pyro_metric
 
 from bayesian import BayesianThreeFCLayers, plot_predictions
@@ -56,13 +56,13 @@ y_train = y_train.reshape(-1, 1)
 model = BayesianThreeFCLayers(hidden_size=10, window_len=1, prior_scale=0.5)
 
 # mean_field_guide = AutoDiagonalNormal(model)
-mean_field_guide = AutoMultivariateNormal(model)
+mean_field_guide = AutoDelta(model)
 optimizer = pyro.optim.Adam({"lr": 0.1})
 
 svi = SVI(model, mean_field_guide, optimizer, loss=Trace_ELBO())
 pyro.clear_param_store()
 
-num_epochs = 20000
+num_epochs = 2000
 progress_bar = trange(num_epochs)
 
 losses = []
@@ -79,9 +79,8 @@ for epoch in progress_bar:
         rmse = pyro_metric.eval_rmse(preds, y_train)
         rmse_losses.append(rmse)
 
-        if epoch % 1000 == 0:
-            plot_predictions(true=y_train, pred_mean=preds.mean(0), pred_std=preds.std(0))
-            plt.show()
+        plot_predictions(true=y_train, pred_mean=preds.mean(0), pred_std=preds.std(0))
+        plt.show()
 
 plt.plot(losses)
 plt.show()
