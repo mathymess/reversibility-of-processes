@@ -40,7 +40,8 @@ def train_varinf(windows: torch.Tensor,
                  prior_scale: float = 0.5,
                  train_test_split_ratio: Optional[float] = None,  # None -> Loss on train only
                  save_metrics_every_n_epochs: int = 10,
-                 use_tqdm: bool = True) -> TrainRetval:
+                 use_tqdm: bool = True,
+                 torch_device: Optional[str] = None) -> TrainRetval:
     assert windows.ndim == targets.ndim == 2
     assert windows.shape[0] == targets.shape[0]
 
@@ -53,6 +54,15 @@ def train_varinf(windows: torch.Tensor,
     model = BayesianThreeFCLayers(window_len=windows.shape[-1], target_len=1,
                                   datapoint_size=1, hidden_size=hidden_size,
                                   prior_scale=prior_scale)
+
+    if torch_device is not None:
+        model.to(torch_device)
+        windows = windows.to(torch_device)
+        targets = targets.to(torch_device)
+        if train_test_split_ratio is not None:
+            windows_test = windows_test.to(torch_device)
+            targets_test = targets_test.to(torch_device)
+
     guide = pyro.infer.autoguide.AutoDiagonalNormal(model)
     optimizer = pyro.optim.Adam({"lr": lr})
     svi = pyro.infer.SVI(model, guide, optimizer, loss=pyro.infer.Trace_ELBO())
