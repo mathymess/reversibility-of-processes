@@ -164,6 +164,27 @@ def create_simple_flip_dataholder_for_windows_and_targets(
     return dt
 
 
+def create_dataholder_forward_same_as_backward(
+        brownian: BrownianDatagen,
+        numParticles: int = 50,
+        window_len: int = 3,
+        rng_seed1: Optional[int] = 42,
+        rng_seed2: Optional[int] = 43) -> BayesTrainData:
+    meaningless_time_series = np.zeros((5, 1), np.float32)
+    dt = BayesTrainData(meaningless_time_series)
+
+    generate_windows_targets = functools.partial(brownian.windows_targets,
+                                                 window_len=window_len,
+                                                 numParticles=numParticles)
+
+    dt.windows_f, dt.targets_f = generate_windows_targets(rng_seed=rng_seed1)
+    dt.windows_b, dt.targets_b = generate_windows_targets(rng_seed=rng_seed2)
+    dt.windows_f, dt.targets_f, dt.windows_b, dt.targets_b = map(
+        lambda x: torch.tensor(x, dtype=torch.float32),
+        (dt.windows_f, dt.targets_f, dt.windows_b, dt.targets_b))
+    return dt
+
+
 if __name__ == "__main__":
     b = BrownianDatagen(kBT=1., γ=4., k=5.)
 
