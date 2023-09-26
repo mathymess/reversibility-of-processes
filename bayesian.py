@@ -191,19 +191,27 @@ class ExperimentResults:
     def __init__(self, save_dir: str):
         self.save_dir = save_dir
 
-        self.windows_f = torch.load(os.path.join(save_dir, "windows_f.torch"))
-        self.targets_f = torch.load(os.path.join(save_dir, "targets_f.torch"))
-        self.predictive_f = torch.load(os.path.join(save_dir, "predictive.forward.torch"))
+        self.windows_f = torch.load(os.path.join(save_dir, "windows_f.torch"),
+                                    map_location=torch.device('cpu'))
+        self.targets_f = torch.load(os.path.join(save_dir, "targets_f.torch"),
+                                    map_location=torch.device('cpu'))
+        self.predictive_f = torch.load(os.path.join(save_dir, "predictive.forward.torch"),
+                                       map_location=torch.device('cpu'))
         self.pred_obs_f = self.predictive_f(self.windows_f)["obs"]
 
-        self.windows_b = torch.load(os.path.join(save_dir, "windows_b.torch"))
-        self.targets_b = torch.load(os.path.join(save_dir, "targets_b.torch"))
-        self.predictive_b = torch.load(os.path.join(save_dir, "predictive.backward.torch"))
+        self.windows_b = torch.load(os.path.join(save_dir, "windows_b.torch"),
+                                    map_location=torch.device('cpu'))
+        self.targets_b = torch.load(os.path.join(save_dir, "targets_b.torch"),
+                                    map_location=torch.device('cpu'))
+        self.predictive_b = torch.load(os.path.join(save_dir, "predictive.backward.torch"),
+                                       map_location=torch.device('cpu'))
         self.pred_obs_b = self.predictive_b(self.windows_b)["obs"]
 
         try:
-            self.ts = torch.load(os.path.join(save_dir, "ts.torch"))
-            self.noisy_ts = torch.load(os.path.join(save_dir, "noisy_ts.torch"))
+            self.ts = torch.load(os.path.join(save_dir, "ts.torch"),
+                                 map_location=torch.device('cpu'))
+            self.noisy_ts = torch.load(os.path.join(save_dir, "noisy_ts.torch"),
+                                       map_location=torch.device('cpu'))
         except FileNotFoundError:
             pass
 

@@ -130,15 +130,19 @@ def posterior_predictive_forward_and_backward(
 class ExpResultsWithLosses(ExperimentResults):
     def __init__(self, save_dir: str) -> None:
         super().__init__(save_dir)
-        self.losses_f = torch.load(os.path.join(save_dir, "losses_f.torch"))
-        self.losses_b = torch.load(os.path.join(save_dir, "losses_b.torch"))
+        self.losses_f = torch.load(os.path.join(save_dir, "losses_f.torch"),
+                                   map_location=torch.device('cpu'))
+        self.losses_b = torch.load(os.path.join(save_dir, "losses_b.torch"),
+                                   map_location=torch.device('cpu'))
 
 
 class ExpResultsWithTwoLosses(ExpResultsWithLosses):
     def __init__(self, save_dir: str) -> None:
         super().__init__(save_dir)
-        self.metrics_f = torch.load(os.path.join(save_dir, "metrics.forward.torch"))
-        self.metrics_b = torch.load(os.path.join(save_dir, "metrics.backward.torch"))
+        self.metrics_f = torch.load(os.path.join(save_dir, "metrics.forward.torch"),
+                                    map_location=torch.device('cpu'))
+        self.metrics_b = torch.load(os.path.join(save_dir, "metrics.backward.torch"),
+                                    map_location=torch.device('cpu'))
 
 
 def get_save_dir(save_dir_prefix: str, run: int) -> str:
@@ -166,14 +170,18 @@ def load_learning_curves(save_dir_prefix: str,
     for run in range(num_runs):
         save_dir = get_save_dir(save_dir_prefix, run)
         if alt_metric is None:
-            losses_f.append(torch.load(os.path.join(save_dir, "losses_f.torch")).tolist())
-            losses_b.append(torch.load(os.path.join(save_dir, "losses_b.torch")).tolist())
+            losses_f.append(torch.load(os.path.join(save_dir, "losses_f.torch"),
+                                       map_location=torch.device('cpu')).tolist())
+            losses_b.append(torch.load(os.path.join(save_dir, "losses_b.torch"),
+                                       map_location=torch.device('cpu')).tolist())
         else:
-            metrics_f = torch.load(os.path.join(save_dir, "metrics.forward.torch"))
+            metrics_f = torch.load(os.path.join(save_dir, "metrics.forward.torch"),
+                                   map_location=torch.device('cpu'))
             metrics_f = [dikt[alt_metric] for dikt in metrics_f]
             losses_f.append(metrics_f)
 
-            metrics_b = torch.load(os.path.join(save_dir, "metrics.backward.torch"))
+            metrics_b = torch.load(os.path.join(save_dir, "metrics.backward.torch"),
+                                   map_location=torch.device('cpu'))
             metrics_b = [dikt[alt_metric] for dikt in metrics_b]
             losses_b.append(metrics_b)
 
