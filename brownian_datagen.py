@@ -70,11 +70,15 @@ class BrownianDatagen:
         return (np.concatenate(window_list).squeeze(-1),
                 np.concatenate(target_list).squeeze(-1))
 
-    def visualize(self):
+    def visualize(self, landscape_layout: bool = False):
         traj_f, work_f = self.generate(numParticles=10000)
         traj_b, work_b = self.generate(numParticles=10000, backward=True)
 
-        fig, axs = plt.subplots(nrows=3, ncols=1, figsize=(5, 10))
+        if landscape_layout:
+            fig, axs = plt.subplots(nrows=1, ncols=3, figsize=(13, 5))
+        else:
+            fig, axs = plt.subplots(nrows=3, ncols=1, figsize=(5, 10))
+
         fig.suptitle(f"kBT={self.kBT}, γ={self.γ}, k={self.k}, λ_τ={self.λ_τ}, τ={self.τ}")
 
         # Plot forward trajectories
